@@ -15,7 +15,6 @@ export function StageFinalBurst({ target, onComplete, reportTap }: Props) {
 
   const tap = () => {
     if (doneRef.current) return;
-    playPowercxtSound("tap");
     reportTap(1);
     setCount((c) => {
       const n = c + 1;
@@ -23,6 +22,8 @@ export function StageFinalBurst({ target, onComplete, reportTap }: Props) {
         doneRef.current = true;
         playPowercxtSound("success");
         queueMicrotask(() => onComplete());
+      } else {
+        playPowercxtSound("tap");
       }
       return n;
     });

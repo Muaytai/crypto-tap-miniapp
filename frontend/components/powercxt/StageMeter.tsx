@@ -16,7 +16,6 @@ export function StageMeter({ onComplete, reportTap }: Props) {
   const tap = () => {
     if (doneRef.current) return;
     const crit = Math.random() < 0.12;
-    playPowercxtSound(crit ? "success" : "tap");
     const add = crit ? 12 + Math.floor(Math.random() * 6) : 2 + Math.floor(Math.random() * 4);
     reportTap(1);
     setFlash(crit ? `Крит +${add}!` : null);
@@ -29,6 +28,8 @@ export function StageMeter({ onComplete, reportTap }: Props) {
         doneRef.current = true;
         playPowercxtSound("success");
         queueMicrotask(() => onComplete());
+      } else {
+        playPowercxtSound(crit ? "success" : "tap");
       }
       return n;
     });
