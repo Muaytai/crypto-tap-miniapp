@@ -72,7 +72,7 @@ export function StageSprint({ durationMs, minTaps, onComplete, reportTap }: Prop
       <p className="text-2xl font-semibold tabular-nums text-indigo-600">{taps} тапов</p>
       {failed && (
         <div className="flex flex-col items-center gap-3">
-          <p className="text-center text-sm text-rose-600">Не хватило импульсов. Ещё раз!</p>
+          <p className="text-center text-sm text-rose-600">Не хватило тапов. Ещё раз!</p>
           <button
             type="button"
             onClick={retry}

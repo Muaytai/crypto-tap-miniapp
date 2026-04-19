@@ -24,6 +24,8 @@ ALLOWED_HOSTS = [
 ]
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# HTTPS URL мини-приложения (Next.js), например https://xxx.ngrok.io — для кнопки меню и Web App в чате
+TELEGRAM_WEBAPP_URL = os.environ.get("TELEGRAM_WEBAPP_URL", "").rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -98,6 +100,8 @@ REST_FRAMEWORK = {
 
 _cors = os.environ.get("CORS_ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
+if TELEGRAM_WEBAPP_URL and TELEGRAM_WEBAPP_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(TELEGRAM_WEBAPP_URL)
 CORS_ALLOW_CREDENTIALS = True
 
 # Telegram Mini App opens in iframe; relax for dev API (tune in production)

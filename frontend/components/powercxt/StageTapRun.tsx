@@ -47,7 +47,7 @@ export function StageTapRun({ target, onComplete, reportTap }: Props) {
         onClick={tap}
         className="powercxt-pulse-soft flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-lg font-semibold text-white shadow-xl transition duration-150 active:scale-95"
       >
-        ИМПУЛЬС
+        ТАП
       </button>
     </div>
   );

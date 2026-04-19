@@ -69,7 +69,7 @@ export function StageSwipe({
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="text-lg font-medium text-zinc-800">
-        Импульсов {count} / {swipesNeeded}
+        Свайпов {count} / {swipesNeeded}
       </p>
       <div
         ref={surfaceRef}

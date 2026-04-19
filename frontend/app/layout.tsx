@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -16,7 +16,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "POWERCXT",
   description:
-    "Восемь этапов POWERCXT — свайп, двойной тап, финал с регистрацией на tkxn.org",
+    "Тапалка POWERCXT: этапы, монеты, рефералы из Telegram",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,9 +34,13 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-100">
+      <body
+        suppressHydrationWarning
+        className="flex min-h-full flex-col bg-[#070712] text-zinc-100"
+      >
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
