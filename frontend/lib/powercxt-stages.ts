@@ -1,4 +1,4 @@
-export const POWERCXT_STORAGE_KEY = "powercxt_stage_v2";
+export const POWERCXT_STORAGE_KEY = "powercxt_stage_v3";
 
 export type StageMeta = {
   id: number;
@@ -34,8 +34,18 @@ export const POWERCXT_STAGES: StageMeta[] = [
   },
   {
     id: 6,
+    title: "Вектор разряда",
+    tagline: "Снимите заряд свайпом вверх — направьте поток энергии.",
+  },
+  {
+    id: 7,
+    title: "Двойной импульс",
+    tagline: "Синхронизируйте парные срабатывания — как подтверждение в сети.",
+  },
+  {
+    id: 8,
     title: "Выход на мощность",
-    tagline: "Последняя серия — доведите систему до готовности.",
+    tagline: "Финальная серия — доведите систему до готовности.",
   },
 ];
 

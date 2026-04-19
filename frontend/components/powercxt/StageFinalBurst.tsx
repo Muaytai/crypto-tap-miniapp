@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { playPowercxtSound } from "@/lib/powercxt-feedback";
 
 type Props = {
   target: number;
@@ -14,11 +15,13 @@ export function StageFinalBurst({ target, onComplete, reportTap }: Props) {
 
   const tap = () => {
     if (doneRef.current) return;
+    playPowercxtSound("tap");
     reportTap(1);
     setCount((c) => {
       const n = c + 1;
       if (n >= target && !doneRef.current) {
         doneRef.current = true;
+        playPowercxtSound("success");
         queueMicrotask(() => onComplete());
       }
       return n;

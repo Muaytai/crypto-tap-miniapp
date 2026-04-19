@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "POWERCXT",
   description:
-    "Шесть этапов мини-игры tkxn.org — в конце регистрация и бонус CXT",
+    "Восемь этапов POWERCXT — свайп, двойной тап, финал с регистрацией на tkxn.org",
 };
 
 export default function RootLayout({

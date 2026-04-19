@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { playPowercxtSound } from "@/lib/powercxt-feedback";
 
 type Props = {
   holdsNeeded: number;
@@ -31,6 +32,7 @@ export function StageHold({ holdsNeeded, holdMs, onComplete, reportTap }: Props)
       setProgress(0);
       startRef.current = null;
       if (success) {
+        playPowercxtSound("success");
         reportTap(1);
         setCompleted((c) => {
           const n = c + 1;

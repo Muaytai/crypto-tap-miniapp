@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { playPowercxtSound } from "@/lib/powercxt-feedback";
 
 type Props = {
   hitsNeeded: number;
@@ -34,6 +35,7 @@ export function StageTiming({ hitsNeeded, greenMin, greenMax, onComplete, report
     lastTry.current = now;
 
     if (needle >= greenMin && needle <= greenMax) {
+      playPowercxtSound("success");
       reportTap(1);
       setHits((h) => {
         const n = h + 1;
@@ -45,6 +47,7 @@ export function StageTiming({ hitsNeeded, greenMin, greenMax, onComplete, report
       });
       setHint("В зоне!");
     } else {
+      playPowercxtSound("warn");
       setHint("Мимо — ждите зелёный сектор");
     }
     window.setTimeout(() => setHint(null), 500);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { playPowercxtSound } from "@/lib/powercxt-feedback";
 
 type Props = {
   target: number;
@@ -14,11 +15,13 @@ export function StageTapRun({ target, onComplete, reportTap }: Props) {
 
   const tap = () => {
     if (doneRef.current) return;
+    playPowercxtSound("tap");
     reportTap(1);
     setCount((c) => {
       const n = c + 1;
       if (n >= target && !doneRef.current) {
         doneRef.current = true;
+        playPowercxtSound("success");
         queueMicrotask(() => onComplete());
       }
       return n;
@@ -41,7 +44,7 @@ export function StageTapRun({ target, onComplete, reportTap }: Props) {
       <button
         type="button"
         onClick={tap}
-        className="flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-lg font-semibold text-white shadow-xl transition active:scale-95"
+        className="powercxt-pulse-soft flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-lg font-semibold text-white shadow-xl transition duration-150 active:scale-95"
       >
         ИМПУЛЬС
       </button>

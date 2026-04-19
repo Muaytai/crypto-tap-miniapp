@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { playPowercxtSound } from "@/lib/powercxt-feedback";
 
 type Props = {
   durationMs: number;
@@ -42,6 +43,7 @@ export function StageSprint({ durationMs, minTaps, onComplete, reportTap }: Prop
   const tap = () => {
     if (done || left <= 0) return;
     if (!started.current) started.current = true;
+    playPowercxtSound("tap");
     reportTap(1);
     setTaps((t) => t + 1);
   };

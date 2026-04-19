@@ -7,12 +7,18 @@ import {
   saveStageIndex,
   POWERCXT_STORAGE_KEY,
 } from "@/lib/powercxt-stages";
+import {
+  isPowercxtMuted,
+  setPowercxtMuted,
+} from "@/lib/powercxt-feedback";
 import { PowercxtFinale } from "@/components/PowercxtFinale";
 import { StageTapRun } from "@/components/powercxt/StageTapRun";
 import { StageSprint } from "@/components/powercxt/StageSprint";
 import { StageHold } from "@/components/powercxt/StageHold";
 import { StageTiming } from "@/components/powercxt/StageTiming";
 import { StageMeter } from "@/components/powercxt/StageMeter";
+import { StageSwipe } from "@/components/powercxt/StageSwipe";
+import { StageDoubleTap } from "@/components/powercxt/StageDoubleTap";
 import { StageFinalBurst } from "@/components/powercxt/StageFinalBurst";
 
 type Props = {
@@ -22,6 +28,11 @@ type Props = {
 export function PowercxtGame({ reportTap }: Props) {
   const [ready, setReady] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    setMuted(isPowercxtMuted());
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -47,6 +58,12 @@ export function PowercxtGame({ reportTap }: Props) {
       return next;
     });
   }, []);
+
+  const toggleMute = () => {
+    const next = !isPowercxtMuted();
+    setPowercxtMuted(next);
+    setMuted(next);
+  };
 
   if (!ready) {
     return (
@@ -75,7 +92,10 @@ export function PowercxtGame({ reportTap }: Props) {
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">{meta.tagline}</p>
       </header>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <div
+        key={stageIndex}
+        className="powercxt-stage-in rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
+      >
         {stageIndex === 0 && (
           <StageTapRun target={52} onComplete={advance} reportTap={reportTap} />
         )}
@@ -106,14 +126,39 @@ export function PowercxtGame({ reportTap }: Props) {
         )}
         {stageIndex === 4 && <StageMeter onComplete={advance} reportTap={reportTap} />}
         {stageIndex === 5 && (
+          <StageSwipe
+            swipesNeeded={8}
+            minDeltaY={72}
+            onComplete={advance}
+            reportTap={reportTap}
+          />
+        )}
+        {stageIndex === 6 && (
+          <StageDoubleTap
+            doublesNeeded={10}
+            windowMs={320}
+            onComplete={advance}
+            reportTap={reportTap}
+          />
+        )}
+        {stageIndex === 7 && (
           <StageFinalBurst target={72} onComplete={advance} reportTap={reportTap} />
         )}
       </div>
 
-      <p className="text-center text-xs text-zinc-400">
-        Прогресс сохраняется в браузере. Сброс: добавьте в URL{" "}
-        <code className="rounded bg-zinc-100 px-1">?reset=1</code>
-      </p>
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="text-xs text-zinc-500 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-700"
+        >
+          {muted ? "Включить звук" : "Без звука"}
+        </button>
+        <p className="text-center text-xs text-zinc-400">
+          Прогресс сохраняется в браузере. Сброс:{" "}
+          <code className="rounded bg-zinc-100 px-1">?reset=1</code>
+        </p>
+      </div>
     </div>
   );
 }
