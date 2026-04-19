@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crypto Tap — тапалка",
-  description: "Мини-игра для криптоплатформы (Telegram Mini App + DRF)",
+  title: "POWERCXT",
+  description:
+    "Мини-игра tkxn.org: дойдите до финала и перейдите к регистрации с бонусом CXT",
 };
 
 export default function RootLayout({

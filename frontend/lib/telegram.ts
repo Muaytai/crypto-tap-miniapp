@@ -1,6 +1,7 @@
 export type TelegramWebAppLike = {
   ready: () => void;
   expand: () => void;
+  openLink?: (url: string) => void;
   initData: string;
   initDataUnsafe: Record<string, unknown>;
   version: string;
