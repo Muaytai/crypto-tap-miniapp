@@ -1,6 +1,3 @@
-/** После стольких тапов (сумма с сервера + локальные) показывается финал. */
-export const POWERCXT_FINALE_TAP_THRESHOLD = 500;
-
 const BASE_LOGIN =
   "https://tkxn.org/login/?force_login=true";
 

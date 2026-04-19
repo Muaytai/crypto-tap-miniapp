@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { POWERCXT_FINALE_TAP_THRESHOLD } from "@/lib/powercxt";
 import { getTelegramWebApp } from "@/lib/telegram";
-import { PowercxtFinale } from "@/components/PowercxtFinale";
+import { PowercxtGame } from "@/components/powercxt/PowercxtGame";
 
 type Player = {
   telegram_id: number;
@@ -84,65 +83,47 @@ export function TapGame() {
     return () => window.clearInterval(id);
   }, [initData, flushPending]);
 
-  const onTap = () => {
-    pendingRef.current += 1;
+  const reportTap = useCallback((n: number = 1) => {
+    pendingRef.current += n;
     setPendingDisplay(pendingRef.current);
-  };
+  }, []);
 
   const totalDisplay = (player?.total_taps ?? 0) + pendingDisplay;
-  const tapsUntilFinale = Math.max(0, POWERCXT_FINALE_TAP_THRESHOLD - totalDisplay);
-  const finaleUnlocked = totalDisplay >= POWERCXT_FINALE_TAP_THRESHOLD;
-
-  if (finaleUnlocked) {
-    return <PowercxtFinale />;
-  }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-6 px-4 py-8">
-      <header className="text-center">
-        <p className="text-sm uppercase tracking-wide text-indigo-600">POWERCXT</p>
-        <h1 className="mt-1 text-2xl font-semibold text-zinc-900">Тапалка</h1>
-        {!initData && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Откройте мини-приложение из Telegram — так сервер получит{" "}
-            <code className="rounded bg-amber-100 px-1">initData</code> для синхронизации
-            очков.
-          </p>
-        )}
-      </header>
-
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-zinc-500">Всего тапов</p>
-        <p className="text-4xl font-bold tabular-nums text-zinc-900">{totalDisplay}</p>
-        <p className="text-sm text-indigo-600">
-          До финала: <span className="font-semibold tabular-nums">{tapsUntilFinale}</span>
+    <div className="flex w-full max-w-lg flex-col gap-4">
+      {!initData && (
+        <p className="mx-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-sm text-amber-900">
+          Откройте из Telegram — для синхронизации очков на сервер нужен{" "}
+          <code className="rounded bg-amber-100 px-1">initData</code>. Игра работает и без
+          этого.
         </p>
-        {player && (
-          <p className="text-sm text-zinc-600">
-            Монеты: <span className="font-medium">{player.coins}</span>
-          </p>
-        )}
-        {loading && <p className="text-xs text-zinc-400">загрузка…</p>}
-        {error && <p className="text-center text-sm text-red-600">{error}</p>}
-      </div>
-
-      <button
-        type="button"
-        onClick={onTap}
-        className="mx-auto flex h-44 w-44 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-semibold text-white shadow-lg transition active:scale-95"
-      >
-        ТАП!
-      </button>
-
-      {initData && pendingDisplay > 0 && (
-        <button
-          type="button"
-          onClick={() => void flushPending()}
-          className="text-center text-sm text-indigo-600 underline"
-        >
-          Сохранить сейчас ({pendingDisplay})
-        </button>
       )}
+
+      {initData && (
+        <div className="mx-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-sm shadow-sm">
+          {loading && <p className="text-zinc-500">Профиль…</p>}
+          {error && <p className="text-red-600">{error}</p>}
+          {player && !error && (
+            <p className="text-zinc-600">
+              Всего на сервере:{" "}
+              <span className="font-semibold tabular-nums text-zinc-900">{totalDisplay}</span>{" "}
+              тапов · монеты {player.coins}
+            </p>
+          )}
+          {pendingDisplay > 0 && (
+            <button
+              type="button"
+              onClick={() => void flushPending()}
+              className="mt-2 text-indigo-600 underline"
+            >
+              Сохранить сейчас ({pendingDisplay})
+            </button>
+          )}
+        </div>
+      )}
+
+      <PowercxtGame reportTap={reportTap} />
     </div>
   );
 }
