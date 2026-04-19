@@ -9,3 +9,4 @@ backend/db.sqlite3
 
 frontend/.next/
 frontend/node_modules/
+.cursorignore
