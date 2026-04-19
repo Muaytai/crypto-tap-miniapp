@@ -9,6 +9,7 @@ import {
 } from "@/lib/powercxt-stages";
 import {
   isPowercxtMuted,
+  preloadPowercxtSamples,
   setPowercxtMuted,
 } from "@/lib/powercxt-feedback";
 import { PowercxtFinale } from "@/components/PowercxtFinale";
@@ -32,6 +33,7 @@ export function PowercxtGame({ reportTap }: Props) {
 
   useEffect(() => {
     setMuted(isPowercxtMuted());
+    preloadPowercxtSamples();
   }, []);
 
   useEffect(() => {

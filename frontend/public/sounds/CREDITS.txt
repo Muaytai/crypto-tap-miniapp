@@ -1,0 +1,9 @@
+Interface sounds (WAV) from Kenney.nl «Interface Sounds», packaged by Calinou:
+https://github.com/Calinou/kenney-interface-sounds
+
+License: CC0 1.0 Universal (public domain).
+
+Files bundled:
+- click_002.wav — короткий клик (tap)
+- confirmation_001.wav — подтверждение (success)
+- error_004.wav — предупреждение / промах (warn)

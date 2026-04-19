@@ -6,6 +6,10 @@ export type TelegramWebAppLike = {
   initDataUnsafe: Record<string, unknown>;
   version: string;
   platform: string;
+  HapticFeedback?: {
+    impactOccurred?: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
+    notificationOccurred?: (type: "error" | "success" | "warning") => void;
+  };
 };
 
 export function getTelegramWebApp(): TelegramWebAppLike | undefined {

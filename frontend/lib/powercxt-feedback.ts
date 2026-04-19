@@ -1,6 +1,27 @@
-/** Короткие звуки без внешних файлов (Web Audio). Уважает powercxt_mute в localStorage. */
+/**
+ * Звук: сначала сэмплы из /public/sounds (Kenney CC0, см. CREDITS.txt),
+ * при ошибке воспроизведения — запасной синтезатор (Web Audio).
+ * Тактильный ответ в Telegram Mini App (HapticFeedback).
+ */
+
+import { getTelegramWebApp } from "@/lib/telegram";
+
+export type PowercxtSound = "tap" | "success" | "warn";
+
+const SAMPLE_URLS: Record<PowercxtSound, string> = {
+  tap: "/sounds/click_002.wav",
+  success: "/sounds/confirmation_001.wav",
+  warn: "/sounds/error_004.wav",
+};
+
+const SAMPLE_VOLUME: Record<PowercxtSound, number> = {
+  tap: 0.38,
+  success: 0.42,
+  warn: 0.4,
+};
 
 let audioCtx: AudioContext | null = null;
+let samplesPrimed = false;
 
 function ctx(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -29,10 +50,36 @@ export function setPowercxtMuted(muted: boolean): void {
   }
 }
 
-export type PowercxtSound = "tap" | "success" | "warn";
+/** Предзагрузка в кэш браузера (после монтирования клиента). */
+export function preloadPowercxtSamples(): void {
+  if (typeof window === "undefined" || samplesPrimed) return;
+  samplesPrimed = true;
+  (Object.values(SAMPLE_URLS) as string[]).forEach((src) => {
+    const a = new Audio();
+    a.preload = "auto";
+    a.src = src;
+    void a.load();
+  });
+}
 
-export function playPowercxtSound(kind: PowercxtSound): void {
-  if (typeof window === "undefined" || isPowercxtMuted()) return;
+function triggerHaptic(kind: PowercxtSound): void {
+  const twa = getTelegramWebApp();
+  const h = twa?.HapticFeedback;
+  if (!h) return;
+  try {
+    if (kind === "tap" && typeof h.impactOccurred === "function") {
+      h.impactOccurred("light");
+    } else if (kind === "success" && typeof h.notificationOccurred === "function") {
+      h.notificationOccurred("success");
+    } else if (typeof h.notificationOccurred === "function") {
+      h.notificationOccurred("warning");
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function playOscillatorFallback(kind: PowercxtSound): void {
   const c = ctx();
   if (!c) return;
   if (c.state === "suspended") {
@@ -66,5 +113,21 @@ export function playPowercxtSound(kind: PowercxtSound): void {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
     osc.start(now);
     osc.stop(now + 0.11);
+  }
+}
+
+export function playPowercxtSound(kind: PowercxtSound): void {
+  if (typeof window === "undefined" || isPowercxtMuted()) return;
+
+  triggerHaptic(kind);
+
+  const src = SAMPLE_URLS[kind];
+  const audio = new Audio(src);
+  audio.volume = SAMPLE_VOLUME[kind];
+  const p = audio.play();
+  if (p !== undefined) {
+    p.catch(() => {
+      playOscillatorFallback(kind);
+    });
   }
 }
