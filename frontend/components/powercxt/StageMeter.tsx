@@ -36,19 +36,19 @@ export function StageMeter({ onComplete, reportTap }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="relative h-8 w-full max-w-sm overflow-hidden rounded-full bg-zinc-200">
+    <div className="flex w-full min-w-0 flex-col items-center gap-5 min-[400px]:gap-6">
+      <div className="relative h-7 w-full max-w-sm overflow-hidden rounded-full bg-white/10 min-[400px]:h-8">
         <div
           className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 transition-[width] duration-200"
           style={{ width: `${value}%` }}
         />
       </div>
-      <p className="text-3xl font-bold tabular-nums text-zinc-900">{value}%</p>
-      {flash && <p className="animate-pulse text-sm font-semibold text-fuchsia-600">{flash}</p>}
+      <p className="text-2xl font-bold tabular-nums text-zinc-100 min-[400px]:text-3xl">{value}%</p>
+      {flash && <p className="animate-pulse text-sm font-semibold text-fuchsia-300">{flash}</p>}
       <button
         type="button"
         onClick={tap}
-        className="flex h-36 w-36 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-600 text-base font-semibold text-white shadow-xl transition active:scale-95"
+        className="powercxt-tap-target flex h-[clamp(6.75rem,34vmin,9rem)] w-[clamp(6.75rem,34vmin,9rem)] max-h-36 max-w-36 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-600 text-sm font-semibold text-white shadow-xl transition active:scale-95 min-[400px]:text-base"
       >
         ЗАРЯД
       </button>

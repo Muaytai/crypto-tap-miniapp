@@ -67,15 +67,15 @@ export function StageSwipe({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <p className="text-lg font-medium text-zinc-800">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 min-[400px]:gap-6">
+      <p className="text-base font-medium text-zinc-200 min-[400px]:text-lg">
         Свайпов {count} / {swipesNeeded}
       </p>
       <div
         ref={surfaceRef}
         role="application"
         aria-label="Свайп вверх"
-        className="flex h-52 w-full max-w-sm touch-none select-none flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-300 bg-gradient-to-b from-indigo-50 to-white p-6 text-center shadow-inner transition-transform active:scale-[0.99]"
+        className="flex h-[min(42vh,12.5rem)] min-h-[10.5rem] w-full max-w-sm touch-none select-none flex-col items-center justify-center rounded-2xl border-2 border-dashed border-violet-500/45 bg-gradient-to-b from-violet-950/50 to-black/30 p-4 text-center shadow-inner transition-transform active:scale-[0.99] min-[400px]:h-52 min-[400px]:p-6"
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => {
@@ -83,15 +83,15 @@ export function StageSwipe({
           startY.current = null;
         }}
       >
-        <p className="pointer-events-none text-sm font-medium text-indigo-800">
+        <p className="pointer-events-none text-sm font-medium text-violet-200">
           Ведите вверх
         </p>
-        <p className="pointer-events-none mt-2 text-4xl">↑</p>
-        <p className="pointer-events-none mt-3 text-xs text-zinc-500">
+        <p className="pointer-events-none mt-2 text-4xl text-cyan-200">↑</p>
+        <p className="pointer-events-none mt-3 text-xs text-zinc-400">
           Удержали и провели пальцем / мышью вверх
         </p>
       </div>
-      {hint && <p className="text-sm text-amber-700">{hint}</p>}
+      {hint && <p className="text-sm text-amber-300">{hint}</p>}
     </div>
   );
 }

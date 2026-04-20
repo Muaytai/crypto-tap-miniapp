@@ -35,11 +35,11 @@ export default function RootLayout({
     <html
       lang="ru"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} min-h-dvh antialiased`}
     >
       <body
         suppressHydrationWarning
-        className="flex min-h-full flex-col bg-[#070712] text-zinc-100"
+        className="flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#070712] text-zinc-100 antialiased"
       >
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
