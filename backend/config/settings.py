@@ -24,6 +24,8 @@ ALLOWED_HOSTS = [
 ]
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# @username без @ — для реферальных ссылок во фронте (если не задан NEXT_PUBLIC_TELEGRAM_BOT_USERNAME)
+TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "").strip().lstrip("@")
 # HTTPS URL мини-приложения (Next.js), например https://xxx.ngrok.io — для кнопки меню и Web App в чате
 TELEGRAM_WEBAPP_URL = os.environ.get("TELEGRAM_WEBAPP_URL", "").rstrip("/")
 
@@ -103,6 +105,12 @@ CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
 if TELEGRAM_WEBAPP_URL and TELEGRAM_WEBAPP_URL not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(TELEGRAM_WEBAPP_URL)
 CORS_ALLOW_CREDENTIALS = True
+# Dev: фронт на trycloudflare/loca.lt с прямыми запросами к API (без Next-прокси)
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^https://.*\.trycloudflare\.com$",
+        r"^https://.*\.loca\.lt$",
+    ]
 
 # Telegram Mini App opens in iframe; relax for dev API (tune in production)
 if DEBUG:

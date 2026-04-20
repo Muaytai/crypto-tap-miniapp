@@ -84,22 +84,22 @@ export function StageHold({ holdsNeeded, holdMs, onComplete, reportTap }: Props)
   };
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      <p className="text-lg font-medium text-zinc-800">
+    <div className="flex w-full min-w-0 flex-col items-center gap-6 min-[400px]:gap-8">
+      <p className="text-base font-medium text-zinc-200 min-[400px]:text-lg">
         Удержание {completed} / {holdsNeeded}
       </p>
-      <div className="relative h-6 w-full max-w-xs overflow-hidden rounded-full bg-zinc-200">
+      <div className="relative h-6 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-[width]"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <p className="max-w-xs text-center text-sm text-zinc-500">
+      <p className="max-w-xs px-1 text-center text-xs text-zinc-400 min-[400px]:text-sm">
         Зажмите кнопку и не отпускайте ~{(holdMs / 1000).toFixed(1)} с
       </p>
       <button
         type="button"
-        className="flex h-44 w-44 select-none items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-lg font-semibold text-white shadow-xl touch-manipulation active:scale-95"
+        className="powercxt-tap-target flex h-[clamp(7.25rem,38vmin,11rem)] w-[clamp(7.25rem,38vmin,11rem)] max-h-44 max-w-44 select-none items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-base font-semibold text-white shadow-xl touch-manipulation active:scale-95 min-[400px]:text-lg"
         onPointerDown={(e) => {
           e.preventDefault();
           onDown();

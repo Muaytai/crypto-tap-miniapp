@@ -54,29 +54,31 @@ export function StageTiming({ hitsNeeded, greenMin, greenMax, onComplete, report
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <p className="text-lg font-medium text-zinc-800">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 min-[400px]:gap-6">
+      <p className="text-base font-medium text-zinc-200 min-[400px]:text-lg">
         Попаданий {hits} / {hitsNeeded}
       </p>
-      <div className="relative h-14 w-full max-w-sm rounded-xl bg-zinc-200">
+      <div className="relative h-12 w-full max-w-sm rounded-xl bg-white/10 min-[400px]:h-14">
         <div
-          className="absolute inset-y-2 rounded-md bg-emerald-400/50"
+          className="absolute inset-y-2 rounded-md bg-emerald-500/35"
           style={{
             left: `${greenMin}%`,
             width: `${greenMax - greenMin}%`,
           }}
         />
         <div
-          className="absolute top-1 bottom-1 w-1.5 rounded-full bg-zinc-900 shadow"
+          className="absolute top-1 bottom-1 w-1.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]"
           style={{ left: `calc(${needle}% - 3px)` }}
         />
       </div>
-      <p className="text-xs text-zinc-500">Индикатор движется сам — нажмите в нужный момент</p>
-      {hint && <p className="text-sm text-indigo-600">{hint}</p>}
+      <p className="max-w-sm px-1 text-center text-[11px] text-zinc-400 min-[400px]:text-xs">
+        Индикатор движется сам — нажмите в нужный момент
+      </p>
+      {hint && <p className="text-sm text-cyan-300">{hint}</p>}
       <button
         type="button"
         onClick={tryHit}
-        className="rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-10 py-5 text-lg font-semibold text-white shadow-lg transition active:scale-95"
+        className="powercxt-tap-target w-full max-w-xs rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition active:scale-95 min-[400px]:px-10 min-[400px]:py-5 min-[400px]:text-lg"
       >
         СИНХРОНИЗАЦИЯ
       </button>

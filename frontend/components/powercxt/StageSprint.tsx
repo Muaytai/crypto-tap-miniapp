@@ -59,24 +59,26 @@ export function StageSprint({ durationMs, minTaps, onComplete, reportTap }: Prop
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 min-[400px]:gap-6">
       <div
-        className={`text-5xl font-bold tabular-nums ${left < 2000 ? "text-rose-600" : "text-zinc-900"}`}
+        className={`text-4xl font-bold tabular-nums min-[400px]:text-5xl ${left < 2000 ? "text-rose-400" : "text-zinc-100"}`}
       >
         {(left / 1000).toFixed(2)}с
       </div>
-      <p className="text-center text-sm text-zinc-600">
-        Нужно не меньше <span className="font-semibold text-zinc-800">{minTaps}</span> тапов
+      <p className="max-w-[20rem] text-center text-xs text-zinc-400 min-[400px]:text-sm">
+        Нужно не меньше <span className="font-semibold text-zinc-200">{minTaps}</span> тапов
         за время.
       </p>
-      <p className="text-2xl font-semibold tabular-nums text-indigo-600">{taps} тапов</p>
+      <p className="text-xl font-semibold tabular-nums text-cyan-300 min-[400px]:text-2xl">
+        {taps} тапов
+      </p>
       {failed && (
         <div className="flex flex-col items-center gap-3">
-          <p className="text-center text-sm text-rose-600">Не хватило тапов. Ещё раз!</p>
+          <p className="text-center text-sm text-rose-400">Не хватило тапов. Ещё раз!</p>
           <button
             type="button"
             onClick={retry}
-            className="rounded-xl bg-zinc-900 px-6 py-3 text-sm font-medium text-white"
+            className="powercxt-tap-target min-h-[48px] rounded-xl bg-white/15 px-5 py-3 text-sm font-medium text-white ring-1 ring-white/20"
           >
             Повторить этап
           </button>
@@ -87,7 +89,7 @@ export function StageSprint({ durationMs, minTaps, onComplete, reportTap }: Prop
           type="button"
           onClick={tap}
           disabled={done && taps >= minTaps}
-          className="flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-lg font-semibold text-white shadow-xl transition active:scale-95 disabled:opacity-60"
+          className="powercxt-tap-target flex h-[clamp(7rem,36vmin,10rem)] w-[clamp(7rem,36vmin,10rem)] max-h-40 max-w-40 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-base font-semibold text-white shadow-xl transition active:scale-95 disabled:opacity-60 min-[400px]:text-lg"
         >
           СПРИНТ
         </button>
