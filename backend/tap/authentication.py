@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 
-from rest_framework import authentication, exceptions
+from rest_framework import authentication
 
 from .models import Player
 from .telegram_validate import parse_start_param, parse_user_json, validate_init_data
@@ -27,21 +27,22 @@ class TelegramMiniAppAuthentication(authentication.BaseAuthentication):
 
         try:
             data = validate_init_data(raw)
-        except ValueError as e:
-            raise exceptions.AuthenticationFailed(str(e)) from e
+        except ValueError:
+            # Невалидный/просроченный initData: для публичных GET (рейтинг) не роняем весь запрос 401
+            return None
 
         user_raw = data.get("user")
         if not user_raw:
-            raise exceptions.AuthenticationFailed("user field missing in initData")
+            return None
 
         try:
             tg_user = parse_user_json(user_raw)
-        except json.JSONDecodeError as e:
-            raise exceptions.AuthenticationFailed("invalid user json") from e
+        except json.JSONDecodeError:
+            return None
 
         telegram_id = tg_user.get("id")
         if not telegram_id:
-            raise exceptions.AuthenticationFailed("telegram user id missing")
+            return None
 
         start_param = parse_start_param(data)
         referrer = None
@@ -53,9 +54,13 @@ class TelegramMiniAppAuthentication(authentication.BaseAuthentication):
             except ValueError:
                 referrer = None
 
+        photo = tg_user.get("photo_url") or ""
+        if isinstance(photo, str) and len(photo) > 512:
+            photo = photo[:512]
         defaults = {
             "username": tg_user.get("username") or "",
             "first_name": tg_user.get("first_name") or "",
+            "photo_url": photo if isinstance(photo, str) else "",
         }
 
         player, created = Player.objects.get_or_create(

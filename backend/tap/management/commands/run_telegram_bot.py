@@ -2,32 +2,19 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from telegram import (
-    BotCommand,
-    KeyboardButton,
-    MenuButtonWebApp,
-    ReplyKeyboardMarkup,
-    Update,
-    WebAppInfo,
-)
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import BotCommand, MenuButtonWebApp, ReplyKeyboardRemove, Update, WebAppInfo
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 logger = logging.getLogger(__name__)
-
-BTN_LAYER = "⚡ Игра POWERCXT"
-BTN_PROFILE = "📊 Профиль"
-BTN_TOP = "🏆 Рейтинг"
-BTN_BRIDGE = "🎁 Пригласить"
-BTN_PULSE = "✉️ Обратная связь"
 
 WELCOME_HTML = """\
 <b>POWERCXT</b>
 
 Тапай, проходи этапы, копи монеты. Счёт в Telegram синхронизируется с сервером.
 
-<b>Как зайти в игру:</b> синяя кнопка <code>⚡ POWERCXT</code> у поля ввода или кнопки ниже — откроется мини-приложение.
+<b>Как зайти:</b> нажмите синюю кнопку <code>⚡ POWERCXT</code> слева от поля ввода — откроется мини-приложение (игра, профиль и топ внутри).
 
-<i>«Пригласить» — реферальная ссылка, «Обратная связь» — напишите нам.</i>
+<code>/invite</code> — реферальная ссылка. Об идеях и багах можно написать в этот чат.
 """
 
 
@@ -40,71 +27,41 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Укажите TELEGRAM_WEBAPP_URL в .env — HTTPS-адрес фронта (туннель или хостинг)."
         )
         return
-    web_url = web_url.rstrip("/")
-    keyboard = ReplyKeyboardMarkup(
-        [
-            [KeyboardButton(BTN_LAYER, web_app=WebAppInfo(url=web_url))],
-            [
-                KeyboardButton(
-                    BTN_PROFILE,
-                    web_app=WebAppInfo(url=f"{web_url}/#profile"),
-                ),
-            ],
-            [KeyboardButton(BTN_TOP), KeyboardButton(BTN_BRIDGE)],
-            [KeyboardButton(BTN_PULSE)],
-        ],
-        resize_keyboard=True,
-        is_persistent=True,
-        input_field_placeholder="POWERCXT…",
+    await update.message.reply_html(
+        WELCOME_HTML,
+        reply_markup=ReplyKeyboardRemove(),
     )
-    await update.message.reply_html(WELCOME_HTML, reply_markup=keyboard)
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         await update.message.reply_html(
             "<b>Как играть</b>\n\n"
-            "Откройте игру через меню или кнопку <code>⚡ Игра POWERCXT</code>. "
-            "Внутри — этапы и финал; тапы сохраняются на сервере.\n\n"
-            "<code>/start</code> — обновить клавиатуру."
+            "Откройте мини-приложение синей кнопкой <code>⚡ POWERCXT</code> у поля ввода. "
+            "Внутри — этапы, профиль и рейтинг; тапы сохраняются на сервере.\n\n"
+            "<code>/start</code> — приветствие.\n"
+            "<code>/invite</code> — ссылка для приглашения друзей."
         )
 
 
-async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not update.message or not update.message.text:
+async def cmd_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
         return
-    text = update.message.text.strip()
     bot = context.bot
     uid = update.effective_user.id if update.effective_user else 0
-
-    if text == BTN_TOP:
+    me = await bot.get_me()
+    un = me.username
+    if not un:
         await update.message.reply_text(
-            "🏆 Таблица лидеров появится на сервере позже.\n"
-            "Пока загляните в раздел «Топ» в мини-приложении."
+            "У бота нет @username — задайте имя пользователя в BotFather."
         )
         return
-    if text == BTN_BRIDGE:
-        me = await bot.get_me()
-        un = me.username
-        if not un:
-            await update.message.reply_text(
-                "У бота нет @username — задайте имя пользователя в BotFather."
-            )
-            return
-        link = f"https://t.me/{un}?startapp=ref_{uid}"
-        await update.message.reply_html(
-            "🎁 <b>Пригласить друзей</b>\n\n"
-            "Отправьте ссылку — друг зайдёт в игру, реферал сохранится на сервере:\n\n"
-            f"<code>{link}</code>",
-        )
-        return
-    if text == BTN_PULSE:
-        await update.message.reply_html(
-            "✉️ <b>Обратная связь</b>\n\n"
-            "Ответьте на это сообщение с идеей или багом — мы читаем чат бота.\n"
-            "Срочное: укажите @username в настройках Telegram.",
-        )
-        return
+    link = f"https://t.me/{un}?startapp=ref_{uid}"
+    await update.message.reply_html(
+        "🎁 <b>Пригласить друзей</b>\n\n"
+        "Отправьте ссылку — друг зайдёт в игру, реферал сохранится на сервере:\n\n"
+        f"<code>{link}</code>",
+    )
 
 
 async def post_init(application: Application) -> None:
@@ -115,8 +72,9 @@ async def post_init(application: Application) -> None:
     web_url = web_url.rstrip("/")
     await application.bot.set_my_commands(
         [
-            BotCommand("start", "Панель POWERCXT"),
+            BotCommand("start", "POWERCXT"),
             BotCommand("help", "Как играть"),
+            BotCommand("invite", "Пригласить друзей"),
         ]
     )
     try:
@@ -131,7 +89,7 @@ async def post_init(application: Application) -> None:
 
 
 class Command(BaseCommand):
-    help = "Telegram-бот (polling): reply-клавиатура, кнопка меню Mini App, /start"
+    help = "Telegram-бот (polling): кнопка меню Mini App, /start, без reply-клавиатуры"
 
     def handle(self, *args, **options):
         logging.basicConfig(
@@ -153,6 +111,6 @@ class Command(BaseCommand):
         application = Application.builder().token(token).post_init(post_init).build()
         application.add_handler(CommandHandler("start", cmd_start))
         application.add_handler(CommandHandler("help", cmd_help))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
+        application.add_handler(CommandHandler("invite", cmd_invite))
         self.stdout.write(self.style.SUCCESS("Бот запущен (polling). Ctrl+C — выход."))
         application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)

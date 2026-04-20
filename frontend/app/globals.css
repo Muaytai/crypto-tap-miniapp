@@ -19,10 +19,26 @@
   }
 }
 
+html {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Крупные тап-зоны в мини-аппе: меньше задержки и подсветки */
+.powercxt-tap-target {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @keyframes powercxt-stage-in {

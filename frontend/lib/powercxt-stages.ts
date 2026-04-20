@@ -70,3 +70,11 @@ export function saveStageIndex(index: number): void {
     /* ignore */
   }
 }
+
+export function resetStageProgress(): void {
+  try {
+    localStorage.removeItem(POWERCXT_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}

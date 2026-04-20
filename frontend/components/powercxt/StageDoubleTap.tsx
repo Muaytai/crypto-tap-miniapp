@@ -45,18 +45,18 @@ export function StageDoubleTap({
   };
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      <p className="text-center text-sm text-zinc-600">
-        Двойных серий: <span className="font-semibold text-zinc-900">{count}</span> /{" "}
+    <div className="flex w-full min-w-0 flex-col items-center gap-6 min-[400px]:gap-8">
+      <p className="px-2 text-center text-xs text-zinc-400 min-[400px]:text-sm">
+        Двойных серий: <span className="font-semibold text-zinc-100">{count}</span> /{" "}
         {doublesNeeded}
       </p>
-      <p className="max-w-xs text-center text-xs text-zinc-500">
+      <p className="max-w-xs px-2 text-center text-[11px] text-zinc-500 min-[400px]:text-xs">
         Два быстрых нажатия подряд (окно {windowMs} мс)
       </p>
       <button
         type="button"
         onClick={onTap}
-        className="flex h-44 w-44 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-rose-600 text-lg font-bold text-white shadow-xl transition duration-150 hover:brightness-105 active:scale-95"
+        className="powercxt-tap-target flex h-[clamp(7.25rem,38vmin,11rem)] w-[clamp(7.25rem,38vmin,11rem)] max-h-44 max-w-44 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-rose-600 text-base font-bold text-white shadow-xl transition duration-150 hover:brightness-105 active:scale-95 min-[400px]:text-lg"
       >
         ×2
       </button>
