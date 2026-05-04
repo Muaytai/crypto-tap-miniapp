@@ -93,3 +93,186 @@ export async function apiFetchWithRetry(
   }
   throw last;
 }
+
+// ========== НОВЫЕ МЕТОДЫ API ==========
+
+export type PlayerState = {
+  player: {
+    telegram_id: number;
+    username: string;
+    first_name: string;
+    coins: number;
+    total_taps: number;
+    crystals: number;
+    total_earned_all_time: number;
+    prestige_count: number;
+    max_offline_minutes: number;
+  };
+  items: Array<{
+    item_id: number;
+    item_name: string;
+    quantity: number;
+    item_base_income: number;
+  }>;
+  upgrades: Array<{
+    upgrade_id: number;
+    upgrade_name: string;
+  }>;
+  available_items: Array<{
+    id: number;
+    name: string;
+    base_income_per_second: number;
+    base_price: number;
+  }>;
+  available_upgrades: Array<{
+    id: number;
+    name: string;
+    upgrade_type: string;
+    value: number;
+    base_price: number;
+    min_total_taps: number;
+  }>;
+  income_per_second: number;
+};
+
+export async function fetchFullState(initData: string): Promise<PlayerState> {
+  return apiFetch("/api/state/", { initData }) as Promise<PlayerState>;
+}
+
+export async function buyItem(
+  initData: string,
+  itemId: number,
+  quantity: number = 1
+): Promise<{
+  success: boolean;
+  item_name: string;
+  quantity_bought: number;
+  new_quantity: number;
+  total_price: number;
+  coins_left: number;
+  cached_income_per_second: number;
+}> {
+  return apiFetch("/api/shop/buy/", {
+    method: "POST",
+    initData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item_id: itemId, quantity }),
+  }) as Promise<any>;
+}
+
+export async function buyUpgrade(
+  initData: string,
+  upgradeId: number
+): Promise<{
+  success: boolean;
+  upgrade_name: string;
+  upgrade_type: string;
+  coins_left: number;
+}> {
+  return apiFetch("/api/upgrades/buy/", {
+    method: "POST",
+    initData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ upgrade_id: upgradeId }),
+  }) as Promise<any>;
+}
+
+export async function performPrestige(
+  initData: string
+): Promise<{
+  success: boolean;
+  prestige_count: number;
+  crystals_earned: number;
+  total_crystals: number;
+}> {
+  return apiFetch("/api/prestige/", {
+    method: "POST",
+    initData,
+  }) as Promise<any>;
+}
+
+export async function getPrestigeStatus(initData: string): Promise<{
+  can_prestige: boolean;
+  total_earned_all_time: number;
+  prestige_threshold: number;
+  current_prestige_count: number;
+  crystals: number;
+}> {
+  return apiFetch("/api/prestige/", { initData }) as Promise<any>;
+}
+
+export async function claimDailyReward(initData: string): Promise<{
+  can_claim: boolean;
+  current_streak: number;
+  max_streak: number;
+  reward_coins: number;
+  reward_crystals: number;
+  message: string;
+}> {
+  return apiFetch("/api/daily-reward/", { initData }) as Promise<any>;
+}
+
+export async function fetchAchievements(initData: string): Promise<{
+  achievements: Array<{
+    id: number;
+    name: string;
+    description: string;
+    trigger_type: string;
+    trigger_value: number;
+    reward_crystals: number;
+    reward_coins: number;
+    is_earned: boolean;
+  }>;
+  new_achievements: Array<any>;
+}> {
+  return apiFetch("/api/achievements/", { initData }) as Promise<any>;
+}
+
+export async function fetchCelestialUpgrades(initData: string): Promise<
+  Array<{
+    id: number;
+    name: string;
+    description: string;
+    upgrade_type: string;
+    value: number;
+    price_crystals: number;
+    max_level: number;
+  }>
+> {
+  return apiFetch("/api/celestial-upgrades/", { initData }) as Promise<any>;
+}
+
+export async function buyCelestialUpgrade(
+  initData: string,
+  upgradeId: number
+): Promise<{
+  success: boolean;
+  upgrade_id: number;
+  upgrade_name: string;
+  new_level: number;
+  crystals_left: number;
+}> {
+  return apiFetch("/api/celestial/buy/", {
+    method: "POST",
+    initData,
+    headers: { "Content-Type": application/json },
+    body: JSON.stringify({ upgrade_id: upgradeId }),
+  }) as Promise<any>;
+}
+
+export async function syncTaps(
+  initData: string,
+  tapsDelta: number,
+  coinsDelta: number = 0
+): Promise<{
+  player: PlayerState["player"];
+  income_per_second: number;
+  click_multiplier: number;
+}> {
+  return apiFetch("/api/taps/sync/", {
+    method: "POST",
+    initData,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ taps_delta: tapsDelta, coins_delta: coinsDelta }),
+  }) as Promise<any>;
+}
