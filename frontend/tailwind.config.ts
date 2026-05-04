@@ -8,9 +8,18 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        pixel: ['var(--font-silkscreen)', 'ui-monospace', 'monospace'],
+      },
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
+        workshop: {
+          bg: '#2a2319',
+          panel: '#1a1510',
+          wood: '#3d2f22',
+          tile: '#352a1f',
+        },
       },
       animation: {
         ripple: 'ripple 0.4s ease-out forwards',

@@ -1,3 +1,9 @@
+/**
+ * Клиент DRF для мини-приложения. Соответствие экранам как в idle-игре:
+ * - state, shop/buy — магазин предметов (+/сек); taps/sync — ручной тап;
+ * - upgrades/buy — вкладка улучшений; prestige — «закалка»; celestial — пост-престиж;
+ * - achievements, daily-reward — цели/бонусы; leaderboard — топ (на главной вкладке можно подключить).
+ */
 const configuredBase = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
 
 function isLoopbackApiBase(base: string): boolean {
@@ -201,15 +207,57 @@ export async function getPrestigeStatus(initData: string): Promise<{
   return apiFetch("/api/prestige/", { initData }) as Promise<any>;
 }
 
-export async function claimDailyReward(initData: string): Promise<{
+/** Статус ежедневки без начисления (GET). */
+export type DailyRewardStatus = {
   can_claim: boolean;
   current_streak: number;
   max_streak: number;
+  last_claim_date?: string | null;
+  streak_display: number;
+  next_reward_day: number;
+  day_slot: number;
   reward_coins: number;
   reward_crystals: number;
+  days_to_weekly_bonus: number;
+  weekly_bonus_crystals: number;
   message: string;
-}> {
-  return apiFetch("/api/daily-reward/", { initData }) as Promise<any>;
+};
+
+function isLocalDailyMock(initData: string): boolean {
+  return initData === "dev" || initData === "test_init_data";
+}
+
+function buildMockDailyStatus(claimedToday = false): DailyRewardStatus {
+  const daySlot = 1;
+  return {
+    can_claim: !claimedToday,
+    current_streak: 0,
+    max_streak: 3,
+    last_claim_date: claimedToday ? new Date().toISOString().slice(0, 10) : null,
+    streak_display: 1,
+    next_reward_day: 1,
+    day_slot: daySlot,
+    reward_coins: 1_000,
+    reward_crystals: 0,
+    days_to_weekly_bonus: 7 - daySlot,
+    weekly_bonus_crystals: 5,
+    message: claimedToday ? "Награда уже получена сегодня. Загляните завтра!" : "",
+  };
+}
+
+export async function fetchDailyRewardStatus(initData: string): Promise<DailyRewardStatus> {
+  if (isLocalDailyMock(initData)) {
+    return buildMockDailyStatus(false);
+  }
+  return apiFetch("/api/daily-reward/", { initData }) as Promise<DailyRewardStatus>;
+}
+
+/** Забрать награду за сегодня (POST). */
+export async function claimDailyReward(initData: string): Promise<DailyRewardStatus> {
+  if (isLocalDailyMock(initData)) {
+    return buildMockDailyStatus(true);
+  }
+  return apiFetch("/api/daily-reward/", { initData, method: "POST" }) as Promise<DailyRewardStatus>;
 }
 
 export async function fetchAchievements(initData: string): Promise<{
@@ -255,9 +303,41 @@ export async function buyCelestialUpgrade(
   return apiFetch("/api/celestial/buy/", {
     method: "POST",
     initData,
-    headers: { "Content-Type": application/json },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ upgrade_id: upgradeId }),
   }) as Promise<any>;
+}
+
+export type LeaderboardMetric = "earnings" | "crystals" | "prestige";
+
+export type LeaderboardRow = {
+  rank: number;
+  telegram_id: number;
+  first_name: string;
+  username: string;
+  photo_url: string;
+  score: number;
+};
+
+export async function fetchLeaderboard(
+  initData: string,
+  metric: LeaderboardMetric,
+  limit = 50,
+): Promise<{
+  metric: string;
+  total_players: number;
+  results: LeaderboardRow[];
+  me_rank?: number;
+  me?: PlayerState["player"];
+}> {
+  const q = new URLSearchParams({ metric, limit: String(limit) });
+  return apiFetch(`/api/leaderboard/?${q.toString()}`, { initData }) as Promise<{
+    metric: string;
+    total_players: number;
+    results: LeaderboardRow[];
+    me_rank?: number;
+    me?: PlayerState["player"];
+  }>;
 }
 
 export async function syncTaps(
