@@ -26,11 +26,40 @@ urlpatterns = [
     path("upgrades/buy", views.BuyUpgradeView.as_view()),
     path("upgrades/buy/", views.BuyUpgradeView.as_view(), name="upgrades-buy"),
 
+    # Закалка
+    path("prestige", views.PrestigeView.as_view()),
+    path("prestige/", views.PrestigeView.as_view(), name="prestige"),
+
     # Лидерборд
     path("leaderboard", views.LeaderboardView.as_view()),
     path("leaderboard/", views.LeaderboardView.as_view(), name="leaderboard"),
 
-    # ВРЕМЕННЫЙ ТЕСТОВЫЙ ЭНДПОИНТ (удалить потом)
+    # Небесные апгрейды
+    path("celestial-upgrades", views.CelestialUpgradeListView.as_view()),
+    path("celestial-upgrades/", views.CelestialUpgradeListView.as_view(), name="celestial-upgrades"),
+    path("celestial/buy", views.BuyCelestialUpgradeView.as_view()),
+    path("celestial/buy/", views.BuyCelestialUpgradeView.as_view(), name="celestial-buy"),
+
+    # Достижения
+    path("achievements", views.AchievementsView.as_view()),
+    path("achievements/", views.AchievementsView.as_view(), name="achievements"),
+
+    # Ежедневные награды
+    path("daily-reward", views.DailyRewardView.as_view()),
+    path("daily-reward/", views.DailyRewardView.as_view(), name="daily-reward"),
+
+    # ВРЕМЕННЫЕ ТЕСТОВЫЕ ЭНДПОИНТЫ
     path("test-auth", views.TestAuthView.as_view()),
     path("test-auth/", views.TestAuthView.as_view(), name="test-auth"),
+    path("test-buy", views.TestBuyView.as_view()),
+    path("test-buy/", views.TestBuyView.as_view(), name="test-buy"),
+    path("test-buy-upgrade", views.TestBuyUpgradeView.as_view()),
+    path("test-buy-upgrade/", views.TestBuyUpgradeView.as_view(), name="test-buy-upgrade"),
+    path("test-state", views.TestStateView.as_view()),
+    path("test-state/", views.TestStateView.as_view(), name="test-state"),
+    path("test-prestige", views.TestPrestigeView.as_view()),
+    path("test-prestige/", views.TestPrestigeView.as_view(), name="test-prestige"),
+    path("test-achievements", views.TestAchievementsView.as_view()),
+    path("test-daily", views.TestDailyRewardView.as_view()),
+    path("test-list-achievements", views.TestListAchievementsView.as_view()),
 ]
