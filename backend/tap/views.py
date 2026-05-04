@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -320,7 +320,14 @@ class PrestigeView(APIView):
 
 
 class LeaderboardView(APIView):
-    """Топ игроков"""
+    """Топ игроков: metric=earnings|crystals|prestige (как вкладки «Заработок / Алмазы / Закалки»)."""
+
+    METRIC_FIELDS = {
+        "earnings": "total_earned_all_time",
+        "crystals": "crystals",
+        "prestige": "prestige_count",
+    }
+
     authentication_classes = [TelegramMiniAppAuthentication]
     permission_classes = [AllowAny]
 
@@ -331,7 +338,10 @@ class LeaderboardView(APIView):
             limit = 20
         limit = max(1, min(limit, 100))
 
-        qs = list(Player.objects.order_by("-total_taps", "telegram_id")[:limit])
+        metric = request.query_params.get("metric", "earnings")
+        field = self.METRIC_FIELDS.get(metric, self.METRIC_FIELDS["earnings"])
+
+        qs = list(Player.objects.order_by(f"-{field}", "telegram_id")[:limit])
         results = [
             {
                 "rank": i + 1,
@@ -339,21 +349,24 @@ class LeaderboardView(APIView):
                 "first_name": p.first_name,
                 "username": p.username,
                 "photo_url": p.photo_url or "",
-                "total_taps": p.total_taps,
-                "coins": p.coins,
+                "score": getattr(p, field),
             }
             for i, p in enumerate(qs)
         ]
 
-        payload: dict = {"results": results}
+        payload: dict = {
+            "metric": metric,
+            "total_players": Player.objects.count(),
+            "results": results,
+        }
         user = request.user
         if isinstance(user, TelegramPrincipal):
             player = user.player
-            ahead = Player.objects.filter(total_taps__gt=player.total_taps).count()
-            same_before = Player.objects.filter(
-                total_taps=player.total_taps, telegram_id__lt=player.telegram_id
-            ).count()
-            payload["me_rank"] = ahead + same_before + 1
+            value = getattr(player, field)
+            ahead_q = Q(**{f"{field}__gt": value}) | Q(
+                **{field: value, "telegram_id__lt": player.telegram_id}
+            )
+            payload["me_rank"] = Player.objects.filter(ahead_q).count() + 1
             payload["me"] = PlayerSerializer(player).data
 
         return Response(payload)
@@ -507,8 +520,67 @@ class AchievementsView(APIView):
 
 # ========== ЕЖЕДНЕВНЫЕ НАГРАДЫ ==========
 
+def _daily_config_for_day(day_number: int):
+    try:
+        return DailyRewardConfig.objects.get(day_number=day_number, is_active=True)
+    except DailyRewardConfig.DoesNotExist:
+        return DailyRewardConfig.objects.filter(is_active=True).order_by("day_number").first()
+
+
+def _daily_reward_status(daily: PlayerDailyReward, today):
+    """Только чтение: можно ли забрать сегодня, номер следующего дня награды, слот 1–7 для сетки."""
+    from datetime import date as date_cls
+
+    last = daily.last_claim_date
+    if last == today:
+        can_claim = False
+        next_streak = daily.current_streak
+        streak_display = daily.current_streak
+    elif last is None:
+        can_claim = True
+        next_streak = 1
+        streak_display = 1  # первый визит — как «день 1» в сетке
+    elif (today - last).days > 1:
+        can_claim = True
+        next_streak = 1
+        streak_display = 1
+    else:
+        can_claim = True
+        next_streak = daily.current_streak + 1
+        streak_display = daily.current_streak
+
+    day_slot = ((max(next_streak, 1) - 1) % 7) + 1 if can_claim else ((max(daily.current_streak, 1) - 1) % 7) + 1
+    if not can_claim and daily.current_streak == 0:
+        day_slot = 1
+
+    reward_coins, reward_crystals = 0, 0
+    cfg = _daily_config_for_day(next_streak) if can_claim else _daily_config_for_day(daily.current_streak)
+    if cfg:
+        reward_coins, reward_crystals = cfg.reward_coins, cfg.reward_crystals
+
+    cfg7 = DailyRewardConfig.objects.filter(day_number=7, is_active=True).first()
+    weekly_bonus_crystals = cfg7.reward_crystals if cfg7 else 0
+
+    slot_for_bonus = day_slot if can_claim else ((max(daily.current_streak, 1) - 1) % 7) + 1
+    days_to_weekly_bonus = max(0, 7 - slot_for_bonus)
+
+    return {
+        "can_claim": can_claim,
+        "current_streak": daily.current_streak,
+        "max_streak": daily.max_streak,
+        "last_claim_date": daily.last_claim_date,
+        "streak_display": streak_display,
+        "next_reward_day": next_streak,
+        "day_slot": day_slot,
+        "reward_coins": reward_coins,
+        "reward_crystals": reward_crystals,
+        "days_to_weekly_bonus": days_to_weekly_bonus,
+        "weekly_bonus_crystals": weekly_bonus_crystals,
+    }
+
+
 class DailyRewardView(APIView):
-    """Получение ежедневной награды"""
+    """GET — статус и превью награды (без изменений в БД). POST — забрать награду за сегодня."""
     authentication_classes = [TelegramMiniAppAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -518,62 +590,79 @@ class DailyRewardView(APIView):
         principal: TelegramPrincipal = request.user
         player = principal.player
 
-        daily, created = PlayerDailyReward.objects.get_or_create(
+        daily, _created = PlayerDailyReward.objects.get_or_create(
             player=player,
             defaults={
                 "last_claim_date": None,
                 "current_streak": 0,
                 "max_streak": 0,
-            }
+            },
         )
 
         today = date.today()
-        can_claim = True
-        message = ""
-        reward_coins = 0
-        reward_crystals = 0
-
-        if daily.last_claim_date == today:
-            can_claim = False
-            message = "Already claimed today"
-        elif daily.last_claim_date and (today - daily.last_claim_date).days > 1:
-            # Пропуск → сброс серии
-            daily.current_streak = 1
+        payload = _daily_reward_status(daily, today)
+        if not payload["can_claim"]:
+            msg = "Награда уже получена сегодня. Загляните завтра!"
         else:
-            daily.current_streak += 1
+            msg = ""
+        payload["message"] = msg
+        return Response(payload)
 
-        if can_claim:
-            # Получаем награду за текущий день
-            try:
-                reward_config = DailyRewardConfig.objects.get(day_number=daily.current_streak, is_active=True)
-            except DailyRewardConfig.DoesNotExist:
-                reward_config = DailyRewardConfig.objects.filter(is_active=True).first()
+    def post(self, request):
+        from datetime import date
 
-            if reward_config:
-                reward_coins = reward_config.reward_coins
-                reward_crystals = reward_config.reward_crystals
+        principal: TelegramPrincipal = request.user
+        player = principal.player
 
-                with transaction.atomic():
-                    player.coins += reward_coins
-                    player.crystals += reward_crystals
-                    player.save()
+        daily, _created = PlayerDailyReward.objects.get_or_create(
+            player=player,
+            defaults={
+                "last_claim_date": None,
+                "current_streak": 0,
+                "max_streak": 0,
+            },
+        )
 
-                    daily.last_claim_date = today
-                    if daily.current_streak > daily.max_streak:
-                        daily.max_streak = daily.current_streak
-                    daily.save()
+        today = date.today()
+        if daily.last_claim_date == today:
+            return Response(
+                {"detail": "Уже получено сегодня", "can_claim": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            message = f"Claimed day {daily.current_streak}! +{reward_coins} coins"
+        if daily.last_claim_date is None:
+            next_streak = 1
+        elif (today - daily.last_claim_date).days > 1:
+            next_streak = 1
+        else:
+            next_streak = daily.current_streak + 1
 
-        return Response({
-            "can_claim": can_claim,
-            "current_streak": daily.current_streak,
-            "max_streak": daily.max_streak,
-            "last_claim_date": daily.last_claim_date,
-            "reward_coins": reward_coins,
-            "reward_crystals": reward_crystals,
-            "message": message,
-        })
+        reward_config = _daily_config_for_day(next_streak)
+        if not reward_config:
+            return Response(
+                {"detail": "Награда не настроена"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        reward_coins = reward_config.reward_coins
+        reward_crystals = reward_config.reward_crystals
+
+        with transaction.atomic():
+            player.coins += reward_coins
+            player.crystals += reward_crystals
+            player.save()
+
+            daily.last_claim_date = today
+            daily.current_streak = next_streak
+            if daily.current_streak > daily.max_streak:
+                daily.max_streak = daily.current_streak
+            daily.save()
+
+        payload = _daily_reward_status(daily, today)
+        payload["message"] = f"День {next_streak}! +{reward_coins} монет"
+        if reward_crystals:
+            payload["message"] += f" +{reward_crystals} ◆"
+        return Response(payload)
 
 
 
