@@ -96,7 +96,7 @@ export function TapGame() {
     return () => { cancelled = true; };
   }, [dockTab, initData]);
 
-  const handleSync = (newPlayer: PlayerState["player"], incomePerSecond: number, clickMultiplier: number) => {
+  const handleSync = (newPlayer: PlayerState["player"], incomePerSecond: number, _clickMultiplier?: number) => {
     if (playerState) {
       setPlayerState({
         ...playerState,

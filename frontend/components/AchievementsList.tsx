@@ -55,7 +55,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
       case "total_taps":
         return `Сделать ${value.toLocaleString("ru-RU")} тапов`;
       case "total_coins_earned":
-        return `Заработать ${value.toLocaleString("ru-RU")} монет`;
+        return `Заработать ${value.toLocaleString("ru-RU")} токенов`;
       case "prestige_count":
         return `Сделать закалку ${value} раз`;
       case "items_bought":
@@ -66,6 +66,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
   };
 
   const earnedCount = achievements.filter(a => a.is_earned).length;
+  const visibleAchievements = achievements.slice(0, 4);
 
   if (loading) {
     return (
@@ -104,8 +105,8 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
-        {achievements.map((ach) => (
+      <div className="flex flex-col gap-2">
+        {visibleAchievements.map((ach) => (
           <div
             key={ach.id}
             className={`rounded-xl border p-3 transition ${
