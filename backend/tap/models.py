@@ -1,6 +1,16 @@
 from django.db import models, transaction
 from django.utils import timezone
 
+# --- Аналог механик «Капля Руперта» (референс) → эта кодовая база ---
+# • Валюта / тапы: coins + total_taps — как «очки» в кликере; синхрон с сервером через X-Telegram-Init-Data.
+# • Магазин инструментов (плоскогубцы, +/сек): модели Item + PlayerItem; цена растёт по price_increase_factor.
+# • Вкладки «Апгр.»: Upgrade + PlayerUpgrade (множители клика/дохода, оффлайн-лимит).
+# • «Закал.» (престиж): prestige_count, crystals, perform_prestige() — сброс прогресса, премиум-валюта.
+# • «Топ»: LeaderboardView по total_taps (в референсе может быть другой критерий — легко сменить сортировку).
+# • «Цели»: Achievement + PlayerAchievement.
+# • Подписка на канал + /privacy в боте: в проекте пока нет — см. комментарий в run_telegram_bot.py.
+# • Образовательные «факты» в UI: на фронте можно добавить массив подсказок (как лампочка в референсе).
+
 
 class Player(models.Model):
     telegram_id = models.BigIntegerField(unique=True, db_index=True)

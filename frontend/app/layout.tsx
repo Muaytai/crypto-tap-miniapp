@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Silkscreen } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -13,10 +13,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const silkscreen = Silkscreen({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-silkscreen",
+});
+
 export const metadata: Metadata = {
-  title: "POWERCXT",
-  description:
-    "Тапалка POWERCXT: этапы, монеты, рефералы из Telegram",
+  title: "Crypto Tap",
+  description: "Крипто-тапалка в Telegram: майнинг, апгрейды, цели",
 };
 
 export const viewport: Viewport = {
@@ -35,11 +40,11 @@ export default function RootLayout({
     <html
       lang="ru"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} min-h-dvh antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${silkscreen.variable} min-h-dvh antialiased`}
     >
       <body
         suppressHydrationWarning
-        className="flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#070712] text-zinc-100 antialiased"
+        className="flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#0c0e14] text-amber-50 antialiased"
       >
         <Script
           src="https://telegram.org/js/telegram-web-app.js"

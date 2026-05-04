@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buyItem, type PlayerState } from "@/lib/api";
+import { cryptoItemVisual } from "@/lib/cryptoItemVisual";
 
 type Props = {
   initData: string;
@@ -63,85 +64,99 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const getCurrentQuantity = (itemId: number): number => {
     return playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
   };
+  const visibleItems = playerState.available_items.slice(0, 3);
 
   return (
-    <div className="flex flex-col gap-3 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Магазин</h2>
-        <div className="rounded-full bg-cyan-500/20 px-3 py-1 text-sm text-cyan-400">
-          💰 {playerState.player.coins.toLocaleString("ru-RU")}
-        </div>
+    <div className="flex flex-col gap-2.5 px-2 pb-4">
+      <div className="mb-0.5 pb-1.5">
+        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100/95 sm:text-base">
+          Магазин
+        </h2>
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">
+        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[11px] text-red-200">
           {error}
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        {playerState.available_items.map((item) => {
+        {visibleItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
           const price1 = getPriceForQuantity(item, currentQty, 1);
           const price10 = getPriceForQuantity(item, currentQty, 10);
           const price50 = getPriceForQuantity(item, currentQty, 50);
           const canAfford1 = playerState.player.coins >= price1;
 
+          const visual = cryptoItemVisual(item.name);
           return (
             <div
               key={item.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-cyan-500/30"
+              className="border-b border-amber-800/25 py-2.5 last:border-b-0"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-white">{item.name}</h3>
-                  <p className="text-xs text-zinc-500">
-                    +{item.base_income_per_second}/сек
+              <div className="flex items-start gap-2">
+                <div
+                  className="flex h-[3.25rem] w-[3.25rem] shrink-0 flex-col items-center justify-center rounded-sm border border-cyan-600/35 bg-cyan-950/20 sm:h-14 sm:w-14"
+                  title={visual.tag}
+                >
+                  <span className="text-xl leading-none sm:text-2xl" aria-hidden>
+                    {visual.emoji}
+                  </span>
+                  <span className="font-pixel mt-0.5 text-[7px] text-cyan-300/80">{visual.tag}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-pixel text-sm text-amber-50 sm:text-base">{item.name}</h3>
+                  <p className="font-pixel mt-0.5 text-[11px] text-cyan-400/90">
+                    +{item.base_income_per_second} хеш/сек
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  {currentQty > 0 && (
+                    <p className="font-pixel mt-0.5 text-[10px] text-amber-200/60">
+                      Куплено: {currentQty}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     <button
+                      type="button"
                       onClick={() => handleBuy(item.id, 1)}
                       disabled={loading === item.id || !canAfford1}
-                      className={`tap-target rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
                         canAfford1
-                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:scale-105"
-                          : "bg-zinc-700 text-zinc-500"
+                          ? "border-cyan-500/60 bg-gradient-to-b from-cyan-600 to-blue-700 text-white active:translate-y-px"
+                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
                       }`}
                     >
                       x1 ({price1.toLocaleString("ru-RU")})
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleBuy(item.id, 10)}
                       disabled={loading === item.id || playerState.player.coins < price10}
-                      className={`tap-target rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
                         playerState.player.coins >= price10
-                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:scale-105"
-                          : "bg-zinc-700 text-zinc-500"
+                          ? "border-violet-500/60 bg-gradient-to-b from-violet-600 to-purple-800 text-white active:translate-y-px"
+                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
                       }`}
                     >
                       x10 ({price10.toLocaleString("ru-RU")})
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleBuy(item.id, 50)}
                       disabled={loading === item.id || playerState.player.coins < price50}
-                      className={`tap-target rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
                         playerState.player.coins >= price50
-                          ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:scale-105"
-                          : "bg-zinc-700 text-zinc-500"
+                          ? "border-amber-500/70 bg-gradient-to-b from-amber-600 to-orange-700 text-white active:translate-y-px"
+                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
                       }`}
                     >
                       x50 ({price50.toLocaleString("ru-RU")})
                     </button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-cyan-400">{currentQty}</p>
-                  <p className="text-xs text-zinc-500">шт.</p>
-                </div>
               </div>
               {loading === item.id && (
-                <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full w-1/2 animate-pulse rounded-full bg-cyan-500" />
+                <div className="mt-2 h-1 w-full overflow-hidden border border-amber-900/50 bg-black/40">
+                  <div className="h-full w-1/2 animate-pulse bg-cyan-500" />
                 </div>
               )}
             </div>

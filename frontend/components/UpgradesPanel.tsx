@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buyUpgrade, type PlayerState } from "@/lib/api";
+import { ItemShop } from "@/components/ItemShop";
 
 type Props = {
   initData: string;
@@ -78,7 +79,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Улучшения</h2>
         <div className="rounded-full bg-cyan-500/20 px-3 py-1 text-sm text-cyan-400">
@@ -159,6 +160,10 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           Пока нет доступных улучшений
         </p>
       )}
+
+      <div className="mt-3 border-t border-white/10 pt-2">
+        <ItemShop initData={initData} playerState={playerState} onPurchase={onPurchase} />
+      </div>
     </div>
   );
 }

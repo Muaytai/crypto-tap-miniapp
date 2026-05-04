@@ -1,3 +1,13 @@
+"""
+Бот для Mini App. В референсе «Капля Руперта» до игры часто стоят:
+  подписка на канал (getChatMember) + кнопка «Я подписался», /privacy со ссылкой.
+
+Здесь: /start, /help, /invite и Menu Button → Web App. Чтобы повторить «стену»:
+  - в обработчике /start слать InlineKeyboard: url «Подписаться» + callback «Я подписался»;
+  - по callback вызывать bot.get_chat_member(channel_id, user_id) и при member не в left/kicked
+    разрешать играть (флаг в БД или просто текст «можно открыть мини-апп»);
+  - команду /privacy и ссылку на политику — по аналогии с референсом.
+"""
 import logging
 
 from django.conf import settings
