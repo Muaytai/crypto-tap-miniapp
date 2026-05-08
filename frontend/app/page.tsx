@@ -27,7 +27,7 @@ const DOCK: { id: DockTab; label: string; title: string }[] = [
   { id: "upgrades", label: "🚀", title: "Апгр." },
   { id: "goals", label: "🏆", title: "Цели" },
   { id: "prestige", label: "💎", title: "Закал." },
-  { id: "top", label: "🎖", title: "Топ" },
+  { id: "top", label: "🥇", title: "Топ" },
 ];
 
 function GameHeader({ playerState }: { playerState: PlayerState }) {
@@ -266,7 +266,7 @@ export default function Home() {
         );
       case "top":
         return (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-full min-h-0 flex-1 flex-col">
             <LeaderboardPanel initData={initData} />
           </div>
         );
@@ -278,10 +278,12 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === "lab" ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+        }`}
       >
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className={`h-full min-h-0 flex-1 ${activeTab === "top" ? "overflow-y-auto" : "overflow-hidden"}`}>
           {renderContent()}
         </div>
         <BottomDock active={activeTab} onChange={setActiveTab} />
@@ -429,10 +431,12 @@ function DevHome() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === "lab" ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+        }`}
       >
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className={`min-h-0 flex-1 ${activeTab === "top" ? "overflow-y-auto" : "overflow-hidden"}`}>
           {renderContent()}
         </div>
         <BottomDock active={activeTab} onChange={setActiveTab} />
