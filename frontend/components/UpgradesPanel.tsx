@@ -56,15 +56,6 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     return "🔒 Недоступно";
   };
 
-  const getUpgradeIcon = (type: string): string => {
-    switch (type) {
-      case "click_multiplier": return "👆";
-      case "income_multiplier": return "⚡";
-      case "offline_extension": return "😴";
-      default: return "✨";
-    }
-  };
-
   const getUpgradeDescription = (upgrade: PlayerState["available_upgrades"][0]): string => {
     switch (upgrade.upgrade_type) {
       case "click_multiplier":
@@ -79,73 +70,60 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Улучшения</h2>
-        <div className="rounded-full bg-cyan-500/20 px-3 py-1 text-sm text-cyan-400">
-          💰 {playerState.player.coins.toLocaleString("ru-RU")}
-        </div>
+    <div className="flex flex-col gap-3 px-3 pb-4">
+      <div className="mb-1 border-b-2 border-amber-800/40 pb-1.5">
+        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100">
+          АПГРЕЙДЫ
+        </h2>
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">
+        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {playerState.available_upgrades.map((upgrade) => {
           const isPurchased = purchasedUpgradeIds.has(upgrade.id);
           const unlocked = isUnlocked(upgrade);
-          const canAfford = playerState.player.coins >= upgrade.base_price;
-          const canBuy = !isPurchased && unlocked && canAfford;
+          const canBuy = !isPurchased && unlocked && playerState.player.coins >= upgrade.base_price;
 
           return (
             <div
               key={upgrade.id}
-              className={`rounded-2xl border p-4 transition ${
-                isPurchased
-                  ? "border-green-500/30 bg-green-950/20"
-                  : unlocked
-                  ? "border-white/10 bg-white/5 hover:border-cyan-500/30"
-                  : "border-white/5 bg-white/5 opacity-60"
+              className={`border-b border-amber-800/25 py-3 last:border-b-0 ${
+                isPurchased ? "opacity-50" : ""
               }`}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
-                    <div>
-                      <h3 className="text-lg font-medium text-white">{upgrade.name}</h3>
-                      <p className="text-xs text-zinc-500">
-                        {getUpgradeDescription(upgrade)}
-                      </p>
-                    </div>
-                  </div>
+                  <h3 className="font-pixel text-sm text-amber-50">{upgrade.name}</h3>
+                  <p className="font-pixel text-[10px] leading-relaxed text-cyan-400/80">
+                    {getUpgradeDescription(upgrade)}
+                  </p>
                   {!unlocked && (
-                    <p className="mt-2 text-xs text-amber-400">
+                    <p className="mt-1 font-pixel text-[9px] text-amber-600">
                       {getLockReason(upgrade)}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   {isPurchased ? (
-                    <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs text-green-400">
-                      ✓ Куплено
-                    </span>
+                    <span className="font-pixel text-[10px] text-green-500">✓ куплено</span>
                   ) : (
                     <button
                       onClick={() => handleBuy(upgrade.id)}
                       disabled={loading === upgrade.id || !canBuy}
-                      className={`tap-target rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      className={`tap-target font-pixel border px-3 py-1.5 text-[10px] transition ${
                         canBuy
-                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:scale-105"
-                          : "bg-zinc-700 text-zinc-500"
+                          ? "border-cyan-500/60 bg-gradient-to-b from-cyan-700 to-blue-800 text-white active:translate-y-px"
+                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
                       }`}
                     >
                       {loading === upgrade.id
                         ? "..."
-                        : `${upgrade.base_price.toLocaleString("ru-RU")} 💰`}
+                        : `${upgrade.base_price.toLocaleString("ru-RU")}`}
                     </button>
                   )}
                 </div>
@@ -156,14 +134,10 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {playerState.available_upgrades.length === 0 && (
-        <p className="py-8 text-center text-zinc-500">
+        <p className="py-8 text-center font-pixel text-xs text-zinc-500">
           Пока нет доступных улучшений
         </p>
       )}
-
-      <div className="mt-3 border-t border-white/10 pt-2">
-        <ItemShop initData={initData} playerState={playerState} onPurchase={onPurchase} />
-      </div>
     </div>
   );
 }

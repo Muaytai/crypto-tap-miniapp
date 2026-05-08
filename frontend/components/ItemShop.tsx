@@ -64,26 +64,37 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const getCurrentQuantity = (itemId: number): number => {
     return playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
   };
-  const visibleItems = playerState.available_items.slice(0, 3);
+  const allItems = playerState.available_items;
 
   return (
-    <div className="flex flex-col gap-2.5 px-2 pb-4">
-      <div className="mb-0.5 pb-1.5">
-        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100/95 sm:text-base">
+    <div className="flex flex-col gap-3 px-3 pb-4">
+      <div className="mb-1 border-b-2 border-amber-800/40 pb-1.5">
+        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100">
           Магазин
         </h2>
       </div>
 
       {error && (
-        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[11px] text-red-200">
+        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200">
           {error}
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {visibleItems.map((item) => {
+      {/* Кнопки x1 x10 x50 */}
+      <div className="flex gap-2 border-b border-amber-800/30 pb-2">
+        <span className="font-pixel text-xs text-amber-500">Кратность:</span>
+        <div className="flex gap-2">
+          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x1</button>
+          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x10</button>
+          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x50</button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {allItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
           const price1 = getPriceForQuantity(item, currentQty, 1);
+          const canAfford = playerState.player.coins >= price1;
           const price10 = getPriceForQuantity(item, currentQty, 10);
           const price50 = getPriceForQuantity(item, currentQty, 50);
           const canAfford1 = playerState.player.coins >= price1;
@@ -92,77 +103,49 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           return (
             <div
               key={item.id}
-              className="border-b border-amber-800/25 py-2.5 last:border-b-0"
+              className="flex items-center justify-between border-b border-amber-800/25 py-2 last:border-b-0"
             >
-              <div className="flex items-start gap-2">
-                <div
-                  className="flex h-[3.25rem] w-[3.25rem] shrink-0 flex-col items-center justify-center rounded-sm border border-cyan-600/35 bg-cyan-950/20 sm:h-14 sm:w-14"
-                  title={visual.tag}
-                >
-                  <span className="text-xl leading-none sm:text-2xl" aria-hidden>
-                    {visual.emoji}
-                  </span>
-                  <span className="font-pixel mt-0.5 text-[7px] text-cyan-300/80">{visual.tag}</span>
+              {/* Левая часть: иконка + название + доход */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 flex-col items-center justify-center rounded border border-cyan-600/30 bg-cyan-950/20">
+                  <span className="text-xl">{visual.emoji}</span>
+                  <span className="font-pixel text-[8px] text-cyan-400/70">{visual.tag}</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-pixel text-sm text-amber-50 sm:text-base">{item.name}</h3>
-                  <p className="font-pixel mt-0.5 text-[11px] text-cyan-400/90">
-                    +{item.base_income_per_second} хеш/сек
+                <div>
+                  <h3 className="font-pixel text-sm text-amber-50">{item.name}</h3>
+                  <p className="font-pixel text-[10px] text-cyan-400">
+                    +{item.base_income_per_second.toLocaleString("ru-RU")}/сек
                   </p>
-                  {currentQty > 0 && (
-                    <p className="font-pixel mt-0.5 text-[10px] text-amber-200/60">
-                      Куплено: {currentQty}
-                    </p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleBuy(item.id, 1)}
-                      disabled={loading === item.id || !canAfford1}
-                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
-                        canAfford1
-                          ? "border-cyan-500/60 bg-gradient-to-b from-cyan-600 to-blue-700 text-white active:translate-y-px"
-                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
-                      }`}
-                    >
-                      x1 ({price1.toLocaleString("ru-RU")})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleBuy(item.id, 10)}
-                      disabled={loading === item.id || playerState.player.coins < price10}
-                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
-                        playerState.player.coins >= price10
-                          ? "border-violet-500/60 bg-gradient-to-b from-violet-600 to-purple-800 text-white active:translate-y-px"
-                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
-                      }`}
-                    >
-                      x10 ({price10.toLocaleString("ru-RU")})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleBuy(item.id, 50)}
-                      disabled={loading === item.id || playerState.player.coins < price50}
-                      className={`tap-target font-pixel border-2 px-2 py-1.5 text-[10px] sm:text-[11px] ${
-                        playerState.player.coins >= price50
-                          ? "border-amber-500/70 bg-gradient-to-b from-amber-600 to-orange-700 text-white active:translate-y-px"
-                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
-                      }`}
-                    >
-                      x50 ({price50.toLocaleString("ru-RU")})
-                    </button>
-                  </div>
                 </div>
               </div>
-              {loading === item.id && (
-                <div className="mt-2 h-1 w-full overflow-hidden border border-amber-900/50 bg-black/40">
-                  <div className="h-full w-1/2 animate-pulse bg-cyan-500" />
-                </div>
-              )}
+
+              {/* Правая часть: количество + цена + кнопка */}
+              <div className="flex items-center gap-2 text-right">
+                <span className="font-pixel min-w-[3rem] text-base font-bold text-amber-300">
+                  {currentQty}
+                </span>
+                <button
+                  onClick={() => handleBuy(item.id, 1)}
+                  disabled={loading === item.id || !canAfford}
+                  className={`tap-target font-pixel border px-3 py-1.5 text-[11px] transition ${
+                    canAfford
+                      ? "border-cyan-500/60 bg-gradient-to-b from-cyan-700 to-blue-800 text-white active:translate-y-px"
+                      : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
+                  }`}
+                >
+                  {price1.toLocaleString("ru-RU")}
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {allItems.length === 0 && (
+        <p className="py-8 text-center font-pixel text-xs text-zinc-500">
+          Магазин пуст
+        </p>
+      )}
     </div>
   );
 }

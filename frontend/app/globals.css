@@ -138,3 +138,14 @@ body {
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
+
+
+
+@font-face {
+  font-family: 'Pixel';
+  src: url('/fonts/pixel.ttf') format('truetype');
+}
+
+.font-pixel {
+  font-family: 'Pixel', monospace;
+}
