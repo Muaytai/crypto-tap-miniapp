@@ -173,3 +173,90 @@ body {
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
+
+/* Иконки достижений («Цели»): подсветка / затемнение / лёгкая анимация */
+@keyframes ach-gold-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(246, 205, 45, 0.22),
+      0 0 14px rgba(246, 205, 45, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(246, 205, 45, 0.18),
+      0 0 22px rgba(246, 205, 45, 0.28);
+  }
+}
+
+@keyframes ach-cyan-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.32);
+  }
+}
+
+@keyframes ach-shine {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes ach-bubble {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.ach-icon-wrap--earned {
+  animation: ach-gold-ring 2.6s ease-in-out infinite;
+}
+
+.ach-icon-wrap--active {
+  animation: ach-cyan-glow 2.2s ease-in-out infinite;
+}
+
+.ach-icon-wrap--active .ach-icon-svg {
+  animation: float 2.6s ease-in-out infinite;
+}
+
+.ach-icon-wrap--locked .ach-icon-svg {
+  opacity: 0.72;
+  filter: saturate(0.55) brightness(0.88);
+}
+
+.ach-sparkle::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 36%,
+    rgba(255, 255, 255, 0.14) 48%,
+    transparent 58%
+  );
+  background-size: 220% 100%;
+  animation: ach-shine 3.2s linear infinite;
+  pointer-events: none;
+}
+
+.ach-bubble {
+  animation: ach-bubble 1.9s ease-in-out infinite;
+}
+
+.ach-bubble--2 {
+  animation-delay: 0.45s;
+}

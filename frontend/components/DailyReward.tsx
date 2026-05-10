@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import {
   claimDailyReward,
   fetchDailyRewardStatus,
+  resolveDailyDaySchedule,
+  type DailyRewardDaySlot,
   type DailyRewardStatus,
 } from "@/lib/api";
 
@@ -11,6 +13,20 @@ type Props = {
   initData: string;
   onUpdate: (coins: number, crystals: number) => void;
 };
+
+function rewardCaption(row: DailyRewardDaySlot): string {
+  if (row.reward_crystals > 0 && row.reward_coins <= 0) {
+    return `◆${row.reward_crystals}`;
+  }
+  const parts: string[] = [];
+  if (row.reward_coins > 0) {
+    parts.push(`${row.reward_coins.toLocaleString("ru-RU")}`);
+  }
+  if (row.reward_crystals > 0) {
+    parts.push(`◆${row.reward_crystals}`);
+  }
+  return parts.join(" · ") || "—";
+}
 
 export function DailyReward({ initData, onUpdate }: Props) {
   const [status, setStatus] = useState<DailyRewardStatus | null>(null);
@@ -52,39 +68,83 @@ export function DailyReward({ initData, onUpdate }: Props) {
     );
   }
 
+  const schedule = resolveDailyDaySchedule(status);
+
   return (
-    <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-blue-950/30 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold text-white">📅 Ежедневная награда</h3>
-        <div className="rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-400">
+    <div className="rounded-2xl border border-[#2e3a43] bg-[#141920] p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="font-pixel text-[15px] text-[#f3f7ff]">Ежедневная награда</h3>
+        <div className="shrink-0 rounded-md border border-[#0c6b96] bg-[#05384d] px-2 py-0.5 font-pixel text-[11px] text-[#47d2ff]">
           День {status.day_slot} / 7
         </div>
       </div>
 
-      {status.can_claim ? (
-        <button
-          type="button"
-          onClick={() => void handleClaim()}
-          disabled={loading}
-          className="tap-target w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-3 font-medium text-white transition hover:scale-105 disabled:opacity-50"
-        >
-          {loading
-            ? "Загрузка..."
-            : `Забрать награду (день ${status.next_reward_day}) → +${status.reward_coins.toLocaleString("ru-RU")} 💰`}
-          {status.reward_crystals > 0 && ` +${status.reward_crystals} 💎`}
-        </button>
-      ) : (
-        <div className="rounded-xl bg-white/5 p-3 text-center text-sm text-zinc-400">
-          {status.message || "Награда уже получена сегодня. Завтра будет следующая!"}
-        </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {schedule.map((row) => {
+          const isClaimable = row.status === "claimable" && status.can_claim;
+          const isClaimed = row.status === "claimed";
+          const isLocked = row.status === "locked";
+
+          const cellClass = isClaimable
+            ? "border-[#04a9f4] bg-[#063045] shadow-[0_0_0_1px_rgba(4,169,244,0.35),0_0_12px_rgba(4,169,244,0.2)]"
+            : isClaimed
+              ? "border-[#3d4a35] bg-[#1a2218]/90 opacity-90"
+              : "border-[#2a333d] bg-[#0f1419]/80 opacity-55";
+
+          const inner = (
+            <>
+              <span className="font-pixel text-[14px] font-bold tabular-nums leading-none text-[#f5f7fa]">
+                {row.day}
+              </span>
+              <span className="mt-1 line-clamp-2 text-center font-pixel text-[10px] leading-snug text-[#c5d0dc]">
+                {rewardCaption(row)}
+              </span>
+              {isClaimed ? (
+                <span className="mt-1 font-pixel text-[11px] leading-none text-[#86efac]">✓</span>
+              ) : isClaimable ? (
+                <span className="mt-1 font-pixel text-[9px] uppercase tracking-wide text-[#7dd3fc]">
+                  забрать
+                </span>
+              ) : null}
+            </>
+          );
+
+          if (isClaimable) {
+            return (
+              <button
+                key={row.day}
+                type="button"
+                disabled={loading}
+                onClick={() => void handleClaim()}
+                className={`tap-target flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-2 transition disabled:opacity-50 ${cellClass}`}
+              >
+                {inner}
+              </button>
+            );
+          }
+
+          return (
+            <div
+              key={row.day}
+              className={`flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-2 ${cellClass}`}
+            >
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+
+      {!status.can_claim && (
+        <p className="mt-2 text-center font-pixel text-[11px] leading-snug text-[#8f9bab]">
+          {status.message || "Награда уже получена сегодня. Завтра — следующий день!"}
+        </p>
       )}
 
-      <div className="mt-3 flex justify-between text-xs text-zinc-500">
+      <div className="mt-2 flex justify-between gap-2 font-pixel text-[10px] text-[#73808f]">
         <span>Макс. серия: {status.max_streak}</span>
         {status.last_claim_date && (
-          <span>
-            Последний забор:{" "}
-            {new Date(status.last_claim_date).toLocaleDateString("ru-RU")}
+          <span className="truncate text-right">
+            Последняя дата: {new Date(status.last_claim_date).toLocaleDateString("ru-RU")}
           </span>
         )}
       </div>

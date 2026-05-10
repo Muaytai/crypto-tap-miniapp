@@ -1,10 +1,13 @@
 import json
+import logging
 from dataclasses import dataclass
 
 from rest_framework import authentication
 
 from .models import Player
 from .telegram_validate import parse_start_param, parse_user_json, validate_init_data
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,12 +26,14 @@ class TelegramMiniAppAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         raw = request.META.get(self.header_name)
         if not raw:
+            logger.info("Telegram auth: missing %s header", self.header_name)
             return None
 
         try:
             data = validate_init_data(raw)
-        except ValueError:
+        except ValueError as e:
             # Невалидный/просроченный initData: для публичных GET (рейтинг) не роняем весь запрос 401
+            logger.warning("Telegram auth: validate_init_data failed: %s", e)
             return None
 
         user_raw = data.get("user")

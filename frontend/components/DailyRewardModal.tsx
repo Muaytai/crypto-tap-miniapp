@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   claimDailyReward,
   fetchDailyRewardStatus,
+  resolveDailyDaySchedule,
+  type DailyRewardDaySlot,
   type DailyRewardStatus,
 } from "@/lib/api";
 
@@ -27,6 +29,20 @@ function normalizeDailyError(error: unknown): string {
     return "Откройте мини-приложение из Telegram, чтобы получить награду.";
   }
   return raw;
+}
+
+function rewardCaption(row: DailyRewardDaySlot): string {
+  if (row.reward_crystals > 0 && row.reward_coins <= 0) {
+    return `◆${row.reward_crystals}`;
+  }
+  const parts: string[] = [];
+  if (row.reward_coins > 0) {
+    parts.push(`${row.reward_coins.toLocaleString("ru-RU")}`);
+  }
+  if (row.reward_crystals > 0) {
+    parts.push(`◆${row.reward_crystals}`);
+  }
+  return parts.join(" · ") || "—";
 }
 
 function streakWord(n: number): string {
@@ -94,7 +110,7 @@ export function DailyRewardModal({
 
   if (!open) return null;
 
-  const highlight = status?.day_slot ?? 1;
+  const schedule = status ? resolveDailyDaySchedule(status) : [];
 
   return (
     <div
@@ -140,27 +156,28 @@ export function DailyRewardModal({
 
         {status && (
           <>
-            <div className="mt-4 flex gap-1.5">
-              {[1, 2, 3, 4, 5, 6, 7].map((d) => {
-                const isCurrent = d === highlight;
-                const isPast = d < highlight;
+            <div className="mt-4 grid grid-cols-7 gap-1.5">
+              {schedule.map((row) => {
+                const isClaimable = row.status === "claimable" && status.can_claim;
+                const isClaimed = row.status === "claimed";
+                const cellClass = isClaimable
+                  ? "border-amber-400/80 bg-amber-400/20 text-amber-50 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
+                  : isClaimed
+                    ? "border-white/10 bg-slate-700/50 text-slate-200"
+                    : "border-white/5 bg-[#252b3d] text-slate-500";
+
                 return (
                   <div
-                    key={d}
-                    className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-0.5 py-2 ${
-                      isCurrent
-                        ? "bg-amber-400 text-neutral-900 shadow-[0_0_12px_rgba(251,191,36,0.45)]"
-                        : isPast
-                          ? "bg-slate-700/90 text-slate-200"
-                          : "bg-[#252b3d] text-slate-400"
-                    }`}
+                    key={row.day}
+                    className={`flex min-h-[5.25rem] min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-2 ${cellClass}`}
                   >
-                    <span className="text-sm font-bold tabular-nums">{d}</span>
-                    {d === 7 && status.weekly_bonus_crystals > 0 && (
-                      <span className="mt-1 flex items-center gap-0.5 text-[9px] font-medium leading-none text-sky-300">
-                        <span aria-hidden>◆</span>
-                        {status.weekly_bonus_crystals}
-                      </span>
+                    <span className="text-sm font-bold tabular-nums leading-none">{row.day}</span>
+                    <span className="mt-1 line-clamp-2 text-center text-[10px] font-medium leading-snug opacity-95">
+                      {rewardCaption(row)}
+                    </span>
+                    {isClaimed && <span className="mt-1 text-[11px] leading-none text-emerald-300/90">✓</span>}
+                    {isClaimable && (
+                      <span className="mt-1 text-[9px] uppercase tracking-wide text-amber-200/90">сегодня</span>
                     )}
                   </div>
                 );

@@ -520,17 +520,64 @@ class AchievementsView(APIView):
 
 # ========== ЕЖЕДНЕВНЫЕ НАГРАДЫ ==========
 
-def _daily_config_for_day(day_number: int):
+def _daily_config_for_streak(streak: int):
+    """Награда за день серии: цикл 1–7 (как в «Капле Руперта»), streak 8 → снова день 1."""
+    if streak <= 0:
+        slot = 1
+    else:
+        slot = ((streak - 1) % 7) + 1
     try:
-        return DailyRewardConfig.objects.get(day_number=day_number, is_active=True)
+        return DailyRewardConfig.objects.get(day_number=slot, is_active=True)
     except DailyRewardConfig.DoesNotExist:
         return DailyRewardConfig.objects.filter(is_active=True).order_by("day_number").first()
 
 
+def _daily_reward_day_configs():
+    """Статичные награды по слотам 1..7 для сетки и API."""
+    rows = []
+    for d in range(1, 8):
+        cfg = DailyRewardConfig.objects.filter(day_number=d, is_active=True).first()
+        rows.append(
+            {
+                "day": d,
+                "reward_coins": cfg.reward_coins if cfg else 0,
+                "reward_crystals": cfg.reward_crystals if cfg else 0,
+            }
+        )
+    return rows
+
+
+def _daily_day_schedule(daily: PlayerDailyReward, can_claim: bool, next_streak: int):
+    """Состояния ячеек 1–7: claimed / claimable / locked."""
+    base = _daily_reward_day_configs()
+    if can_claim:
+        claim_slot = ((max(next_streak, 1) - 1) % 7) + 1
+        out = []
+        for row in base:
+            d = row["day"]
+            if d < claim_slot:
+                st = "claimed"
+            elif d == claim_slot:
+                st = "claimable"
+            else:
+                st = "locked"
+            out.append({**row, "status": st})
+        return out
+
+    last_slot = ((max(daily.current_streak, 1) - 1) % 7) + 1
+    out = []
+    for row in base:
+        d = row["day"]
+        if d <= last_slot:
+            st = "claimed"
+        else:
+            st = "locked"
+        out.append({**row, "status": st})
+    return out
+
+
 def _daily_reward_status(daily: PlayerDailyReward, today):
     """Только чтение: можно ли забрать сегодня, номер следующего дня награды, слот 1–7 для сетки."""
-    from datetime import date as date_cls
-
     last = daily.last_claim_date
     if last == today:
         can_claim = False
@@ -554,7 +601,7 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
         day_slot = 1
 
     reward_coins, reward_crystals = 0, 0
-    cfg = _daily_config_for_day(next_streak) if can_claim else _daily_config_for_day(daily.current_streak)
+    cfg = _daily_config_for_streak(next_streak) if can_claim else _daily_config_for_streak(daily.current_streak)
     if cfg:
         reward_coins, reward_crystals = cfg.reward_coins, cfg.reward_crystals
 
@@ -563,6 +610,8 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
 
     slot_for_bonus = day_slot if can_claim else ((max(daily.current_streak, 1) - 1) % 7) + 1
     days_to_weekly_bonus = max(0, 7 - slot_for_bonus)
+
+    day_schedule = _daily_day_schedule(daily, can_claim, next_streak)
 
     return {
         "can_claim": can_claim,
@@ -576,6 +625,7 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
         "reward_crystals": reward_crystals,
         "days_to_weekly_bonus": days_to_weekly_bonus,
         "weekly_bonus_crystals": weekly_bonus_crystals,
+        "day_schedule": day_schedule,
     }
 
 
@@ -637,7 +687,7 @@ class DailyRewardView(APIView):
         else:
             next_streak = daily.current_streak + 1
 
-        reward_config = _daily_config_for_day(next_streak)
+        reward_config = _daily_config_for_streak(next_streak)
         if not reward_config:
             return Response(
                 {"detail": "Награда не настроена"},
