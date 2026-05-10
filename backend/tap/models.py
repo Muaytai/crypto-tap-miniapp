@@ -152,6 +152,7 @@ class Item(models.Model):
     """Предметы магазина (плоскогубцы, молотки, паяльники и т.д.)"""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
+    icon_name = models.CharField(max_length=100, blank=True, default="")
     base_income_per_second = models.PositiveBigIntegerField(default=0)  # сколько дают /сек
     base_price = models.PositiveBigIntegerField(default=100)
     price_increase_factor = models.FloatField(default=1.15)  # на сколько дорожает при покупке (15%)
@@ -191,6 +192,7 @@ class Upgrade(models.Model):
     """Улучшения (закалённые руки, алмазная закалка и т.д.)"""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
+    icon_name = models.CharField(max_length=100, blank=True, default="")
     is_celestial = models.BooleanField(default=False)  # небесные апгрейды не сбрасываются
 
     # Тип улучшения
@@ -208,8 +210,7 @@ class Upgrade(models.Model):
     # Условия открытия
     min_total_taps = models.PositiveBigIntegerField(default=0)
     min_prestige_count = models.PositiveIntegerField(default=0)
-    required_item = models.ForeignKey(Item, null=True, blank=True, on_delete=models.SET_NULL,
-                                      related_name="required_upgrades")
+    required_item = models.ForeignKey(Item, null=True, blank=True, on_delete=models.SET_NULL, related_name="required_upgrades")
     required_item_quantity = models.PositiveIntegerField(default=0)
 
     sort_order = models.PositiveIntegerField(default=0)
@@ -242,6 +243,7 @@ class CelestialUpgrade(models.Model):
     """Небесные апгрейды — покупаются за алмазы, не сбрасываются при закалке"""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
+    icon_name = models.CharField(max_length=100, blank=True, default="")  # НОВОЕ ПОЛЕ
 
     UPGRADE_TYPES = [
         ("global_income", "Глобальный множитель дохода"),
@@ -286,6 +288,7 @@ class Achievement(models.Model):
     """Достижения для игроков"""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
+    icon_name = models.CharField(max_length=100, blank=True, default="")  # НОВОЕ ПОЛЕ
 
     TRIGGER_TYPES = [
         ("total_taps", "Всего тапов"),
