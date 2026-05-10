@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { buyUpgrade, type PlayerState } from "@/lib/api";
-import { ItemShop } from "@/components/ItemShop";
 
 type Props = {
   initData: string;
@@ -14,11 +13,54 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isDev = initData === "dev" || initData === "test_init_data";
   const purchasedUpgradeIds = new Set(playerState.upgrades.map(u => u.upgrade_id));
 
   const handleBuy = async (upgradeId: number) => {
     setLoading(upgradeId);
     setError(null);
+
+    // DEV-режим: имитируем покупку локально
+    if (isDev) {
+      const upgrade = playerState.available_upgrades.find(u => u.id === upgradeId);
+      if (!upgrade) {
+        setError("Улучшение не найдено");
+        setLoading(null);
+        return;
+      }
+
+      if (purchasedUpgradeIds.has(upgradeId)) {
+        setError("Уже куплено");
+        setLoading(null);
+        return;
+      }
+
+      if (playerState.player.coins < upgrade.base_price) {
+        setError(`Не хватает монет! Нужно ${upgrade.base_price.toLocaleString("ru-RU")}`);
+        setLoading(null);
+        return;
+      }
+
+      // Имитируем успешную покупку
+      setTimeout(() => {
+        const updatedState = {
+          ...playerState,
+          player: {
+            ...playerState.player,
+            coins: playerState.player.coins - upgrade.base_price,
+          },
+          upgrades: [
+            ...playerState.upgrades,
+            { upgrade_id: upgradeId, upgrade_name: upgrade.name },
+          ],
+        };
+        onPurchase(updatedState);
+        setLoading(null);
+      }, 300);
+      return;
+    }
+
+    // Реальный API-запрос
     try {
       const result = await buyUpgrade(initData, upgradeId);
       if (result.success) {
@@ -78,8 +120,14 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {error && (
-        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200">
+        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200 text-center">
           {error}
+        </div>
+      )}
+
+      {isDev && (
+        <div className="border-2 border-amber-700/50 bg-amber-950/40 p-2 font-pixel text-[10px] text-amber-300 text-center">
+          ⚡ DEV-режим: покупки работают локально без сервера
         </div>
       )}
 
