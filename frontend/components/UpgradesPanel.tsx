@@ -52,7 +52,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           },
           upgrades: [
             ...playerState.upgrades,
-            { upgrade_id: upgradeId, upgrade_name: upgrade.name },
+            { upgrade_id: upgradeId, upgrade_name: upgrade.name, upgrade_icon: upgrade.icon_name || "" },
           ],
         };
         onPurchase(updatedState);
@@ -73,7 +73,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           },
           upgrades: [
             ...playerState.upgrades,
-            { upgrade_id: upgradeId, upgrade_name: result.upgrade_name },
+            { upgrade_id: upgradeId, upgrade_name: result.upgrade_name, upgrade_icon: "" },
           ],
         };
         onPurchase(updatedState);
@@ -112,6 +112,15 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     }
   };
 
+  const getUpgradeIcon = (type: string): string => {
+    switch (type) {
+      case "click_multiplier": return "👆";
+      case "income_multiplier": return "⚡";
+      case "offline_extension": return "😴";
+      default: return "✨";
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3 px-3 pb-4">
       <div className="mb-1 border-b-2 border-amber-800/40 pb-1.5">
@@ -141,14 +150,15 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           return (
             <div
               key={upgrade.id}
-              className={`border-b border-amber-800/25 py-3 last:border-b-0 ${
-                isPurchased ? "opacity-50" : ""
-              }`}
+              className={`border-b border-amber-800/25 py-3 last:border-b-0 ${isPurchased ? "opacity-50" : ""}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="font-pixel text-sm text-amber-50">{upgrade.name}</h3>
-                  <p className="font-pixel text-[10px] leading-relaxed text-cyan-400/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
+                    <h3 className="font-pixel text-sm text-amber-50">{upgrade.name}</h3>
+                  </div>
+                  <p className="font-pixel text-[10px] leading-relaxed text-cyan-400/80 mt-1">
                     {getUpgradeDescription(upgrade)}
                   </p>
                   {!unlocked && (
@@ -170,9 +180,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
                           : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
                       }`}
                     >
-                      {loading === upgrade.id
-                        ? "..."
-                        : `${upgrade.base_price.toLocaleString("ru-RU")}`}
+                      {loading === upgrade.id ? "..." : `${upgrade.base_price.toLocaleString("ru-RU")}`}
                     </button>
                   )}
                 </div>

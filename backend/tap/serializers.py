@@ -35,12 +35,13 @@ class ItemSerializer(serializers.ModelSerializer):
 
 class PlayerItemSerializer(serializers.ModelSerializer):
     item_name = serializers.CharField(source="item.name", read_only=True)
+    item_icon = serializers.CharField(source="item.icon_name", read_only=True)
     item_base_income = serializers.IntegerField(source="item.base_income_per_second", read_only=True)
     item_base_price = serializers.IntegerField(source="item.base_price", read_only=True)
 
     class Meta:
         model = PlayerItem
-        fields = ("item_id", "item_name", "quantity", "item_base_income", "item_base_price")
+        fields = ("item_id", "item_name", "item_icon", "quantity", "item_base_income", "item_base_price")
 
 
 class UpgradeSerializer(serializers.ModelSerializer):
@@ -51,12 +52,13 @@ class UpgradeSerializer(serializers.ModelSerializer):
 
 class PlayerUpgradeSerializer(serializers.ModelSerializer):
     upgrade_name = serializers.CharField(source="upgrade.name", read_only=True)
+    upgrade_icon = serializers.CharField(source="upgrade.icon_name", read_only=True)
     upgrade_type = serializers.CharField(source="upgrade.upgrade_type", read_only=True)
     upgrade_value = serializers.FloatField(source="upgrade.value", read_only=True)
 
     class Meta:
         model = PlayerUpgrade
-        fields = ("upgrade_id", "upgrade_name", "upgrade_type", "upgrade_value", "purchased_at")
+        fields = ("upgrade_id", "upgrade_name", "upgrade_icon", "upgrade_type", "upgrade_value", "purchased_at")
 
 
 class FullStateSerializer(serializers.Serializer):

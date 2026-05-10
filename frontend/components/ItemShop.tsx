@@ -66,8 +66,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           updatedState.items.push({
             item_id: itemId,
             item_name: item.name,
+            item_icon: item.icon_name || "",
             quantity: newQty,
             item_base_income: item.base_income_per_second,
+            item_base_price: item.base_price,
           });
         }
 
@@ -100,8 +102,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           const newItem = {
             item_id: itemId,
             item_name: result.item_name,
+            item_icon: playerState.available_items.find(i => i.id === itemId)?.icon_name || "",
             quantity: result.new_quantity,
             item_base_income: playerState.available_items.find(i => i.id === itemId)?.base_income_per_second || 0,
+            item_base_price: playerState.available_items.find(i => i.id === itemId)?.base_price || 0,
           };
           updatedState.items.push(newItem);
         }
@@ -174,15 +178,29 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           const currentQty = getCurrentQuantity(item.id);
           const priceForSelected = getPriceForQuantity(item, currentQty, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
-          const visual = cryptoItemVisual(item.name);
+          const iconName = item.icon_name;
+          const hasIcon = iconName && iconName.trim() !== "";
 
           return (
             <div key={item.id} className="shop-item">
               <div className="shop-item-left">
                 {/* Иконка */}
                 <div className="item-icon">
-                  <span className="item-emoji">{visual.emoji}</span>
-                  <span className="item-tag">{visual.tag}</span>
+                  {hasIcon ? (
+                    <img
+                      src={`/images/items/${iconName}.png`}
+                      alt={item.name}
+                      className="w-10 h-10 object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextSibling?.style?.setProperty('display', 'flex');
+                      }}
+                    />
+                  ) : null}
+                  <span className="item-emoji" style={{ display: hasIcon ? 'none' : 'flex' }}>
+                    {item.name.includes("GPU") ? "🖥️" : item.name.includes("ASIC") ? "⚙️" : "🔧"}
+                  </span>
+                  <span className="item-tag">{item.name.slice(0, 3).toUpperCase()}</span>
                 </div>
 
                 {/* Информация */}
