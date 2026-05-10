@@ -122,26 +122,26 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 pb-4">
-      <div className="mb-1 border-b-2 border-amber-800/40 pb-1.5">
-        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100">
+    <div className="min-h-full bg-gradient-to-b from-[#0f0c0a] to-[#1a1510] px-3 pb-6">
+      <div className="border-b-2 border-amber-600/30 py-4 text-center">
+        <h1 className="font-mono text-2xl font-bold uppercase tracking-[0.15em] text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">
           АПГРЕЙДЫ
-        </h2>
+        </h1>
       </div>
 
+      {isDev && (
+        <div className="mt-2 text-center font-mono text-[10px] text-amber-600/60">
+          ⚡ DEV-режим: покупки локально
+        </div>
+      )}
+
       {error && (
-        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200 text-center">
+        <div className="mt-3 border-2 border-red-700/50 bg-red-950/40 p-2 font-mono text-[10px] text-red-200 text-center">
           {error}
         </div>
       )}
 
-      {isDev && (
-        <div className="border-2 border-amber-700/50 bg-amber-950/40 p-2 font-pixel text-[10px] text-amber-300 text-center">
-          ⚡ DEV-режим: покупки работают локально без сервера
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-3">
         {playerState.available_upgrades.map((upgrade) => {
           const isPurchased = purchasedUpgradeIds.has(upgrade.id);
           const unlocked = isUnlocked(upgrade);
@@ -150,37 +150,52 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           return (
             <div
               key={upgrade.id}
-              className={`border-b border-amber-800/25 py-3 last:border-b-0 ${isPurchased ? "opacity-50" : ""}`}
+              className={`group rounded-xl border p-3 transition-all ${
+                isPurchased
+                  ? "border-green-500/30 bg-green-950/20 opacity-60"
+                  : !unlocked
+                  ? "border-amber-800/20 bg-white/5 opacity-50"
+                  : "border-amber-700/30 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 hover:-translate-y-0.5"
+              }`}
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
-                    <h3 className="font-pixel text-sm text-amber-50">{upgrade.name}</h3>
+                    <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-amber-50">
+                      {upgrade.name}
+                    </h3>
                   </div>
-                  <p className="font-pixel text-[10px] leading-relaxed text-cyan-400/80 mt-1">
+                  <p className="mt-1 font-mono text-[11px] text-emerald-400/80">
                     {getUpgradeDescription(upgrade)}
                   </p>
                   {!unlocked && (
-                    <p className="mt-1 font-pixel text-[9px] text-amber-600">
+                    <p className="mt-1 font-mono text-[9px] text-amber-600">
                       {getLockReason(upgrade)}
                     </p>
                   )}
                 </div>
-                <div className="text-right">
+
+                <div className="flex flex-col items-end gap-2 min-w-[90px]">
+                  {!isPurchased && (
+                    <div className="flex items-center gap-1 font-mono text-xs text-amber-500">
+                      <span className="text-sm">⏱️</span>
+                      <span className="font-bold">{upgrade.base_price.toLocaleString("ru-RU")}</span>
+                    </div>
+                  )}
                   {isPurchased ? (
-                    <span className="font-pixel text-[10px] text-green-500">✓ куплено</span>
+                    <span className="font-mono text-[10px] text-green-500">✓ куплено</span>
                   ) : (
                     <button
                       onClick={() => handleBuy(upgrade.id)}
                       disabled={loading === upgrade.id || !canBuy}
-                      className={`tap-target font-pixel border px-3 py-1.5 text-[10px] transition ${
+                      className={`font-mono text-[11px] px-3 py-1.5 rounded-md transition-all ${
                         canBuy
-                          ? "border-cyan-500/60 bg-gradient-to-b from-cyan-700 to-blue-800 text-white active:translate-y-px"
-                          : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
+                          ? "bg-gradient-to-b from-amber-600 to-orange-700 text-white shadow-md hover:scale-105 active:scale-95"
+                          : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                       }`}
                     >
-                      {loading === upgrade.id ? "..." : `${upgrade.base_price.toLocaleString("ru-RU")}`}
+                      {loading === upgrade.id ? "..." : "Купить"}
                     </button>
                   )}
                 </div>
@@ -191,7 +206,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {playerState.available_upgrades.length === 0 && (
-        <p className="py-8 text-center font-pixel text-xs text-zinc-500">
+        <p className="mt-8 text-center font-mono text-xs text-zinc-500">
           Пока нет доступных улучшений
         </p>
       )}
