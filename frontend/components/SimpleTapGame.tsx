@@ -22,6 +22,16 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
   const lastSyncRef = useRef(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const localCoinsRef = useRef(localCoins);
+  const isLeavingRef = useRef(false);
+
+  // Определяем dev-режим
+  const isDev = initData === "dev" || initData === "test_init_data";
+
+  // Синхронизируем ref с состоянием
+  useEffect(() => {
+    localCoinsRef.current = localCoins;
+  }, [localCoins]);
 
   useEffect(() => {
     setClickMultiplier(1);
@@ -30,10 +40,12 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
   useEffect(() => {
     if (playerState) {
       setLocalCoins(playerState.player.coins);
+      localCoinsRef.current = playerState.player.coins;
       setIncomePerSec(playerState.income_per_second);
     }
   }, [playerState]);
 
+  // Пассивный доход на клиенте
   useEffect(() => {
     if (incomePerSec === 0) return;
 
@@ -48,8 +60,50 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
     };
   }, [incomePerSec]);
 
+  // Сохраняем доход перед уходом с вкладки (при размонтировании компонента)
   useEffect(() => {
-    if (initData === "dev" || initData === "test_init_data") return;
+    return () => {
+      // Предотвращаем двойной вызов
+      if (isLeavingRef.current) return;
+      isLeavingRef.current = true;
+
+      const earnedCoins = localCoinsRef.current - (playerState?.player.coins || 0);
+
+      if (isDev) {
+        // DEV-режим: сохраняем в localStorage
+        if (earnedCoins > 0) {
+          try {
+            const saved = localStorage.getItem("dev_offline_coins");
+            const current = saved ? parseInt(saved, 10) : 0;
+            localStorage.setItem("dev_offline_coins", String(current + earnedCoins));
+            console.log(`💾 DEV: сохранено ${earnedCoins} монет при уходе`);
+          } catch (e) {}
+        }
+        return;
+      }
+
+      // PROD-режим: синхронизируем с сервером
+      if (earnedCoins > 0 || pendingTaps > 0) {
+        console.log(`🔄 Синхронизация перед уходом: +${earnedCoins} монет, +${pendingTaps} тапов`);
+
+        // Асинхронный запрос без ожидания (fire-and-forget)
+        syncTaps(initData, pendingTaps, Math.floor(earnedCoins))
+          .then((result) => {
+            console.log("✅ Синхронизировано перед уходом");
+            if (result.player) {
+              onSync(result.player, result.income_per_second, result.click_multiplier);
+            }
+          })
+          .catch((err) => {
+            console.error("❌ Ошибка синхронизации перед уходом:", err);
+          });
+      }
+    };
+  }, [initData, playerState, pendingTaps, onSync, isDev]);
+
+  // Периодическая синхронизация (только для PROD)
+  useEffect(() => {
+    if (isDev) return;
 
     const syncInterval = setInterval(async () => {
       const now = Date.now();
@@ -63,6 +117,7 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
         onSync(result.player, result.income_per_second, result.click_multiplier);
         setPendingTaps(0);
         setLocalCoins(result.player.coins);
+        localCoinsRef.current = result.player.coins;
         lastSyncRef.current = Date.now();
       } catch (error) {
         console.error("Sync failed:", error);
@@ -70,7 +125,7 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
     }, 30000);
 
     return () => clearInterval(syncInterval);
-  }, [initData, pendingTaps, incomePerSec, onSync]);
+  }, [initData, pendingTaps, incomePerSec, onSync, isDev]);
 
   const handleTap = useCallback(() => {
     setPendingTaps((prev) => prev + 1);
@@ -84,6 +139,23 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
       twa?.HapticFeedback?.impactOccurred("light");
     }
   }, [clickMultiplier]);
+
+  // Восстанавливаем сохранённые монеты при монтировании (только для DEV)
+  useEffect(() => {
+    if (!isDev) return;
+
+    try {
+      const saved = localStorage.getItem("dev_offline_coins");
+      if (saved) {
+        const coins = parseInt(saved, 10);
+        if (coins > 0) {
+          setLocalCoins(prev => prev + coins);
+          localStorage.removeItem("dev_offline_coins");
+          console.log(`💰 DEV: восстановлено ${coins} монет после возврата`);
+        }
+      }
+    } catch (e) {}
+  }, [isDev]);
 
   if (!playerState) {
     return <div className="flex justify-center p-8 text-zinc-500">Загрузка...</div>;
@@ -146,7 +218,7 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
         <p className="font-pixel mt-3 text-xs text-violet-300">✨ x{clickMultiplier} за тап</p>
       )}
 
-      {pendingTaps > 0 && initData !== "dev" && (
+      {pendingTaps > 0 && !isDev && (
         <p className="font-pixel mt-2 text-[10px] text-amber-200/40">
           синхр… +{pendingTaps} тап
         </p>
