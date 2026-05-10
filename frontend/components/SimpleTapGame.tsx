@@ -15,147 +15,63 @@ type Props = {
 };
 
 export function SimpleTapGame({ initData, playerState, onSync }: Props) {
-  const [localCoins, setLocalCoins] = useState(playerState?.player.coins || 0);
-  const [incomePerSec, setIncomePerSec] = useState(playerState?.income_per_second || 0);
   const [clickMultiplier, setClickMultiplier] = useState(1);
-  const [pendingTaps, setPendingTaps] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const pendingTapsRef = useRef(0);
   const lastSyncRef = useRef(Date.now());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const localCoinsRef = useRef(localCoins);
-  const isLeavingRef = useRef(false);
-
-  // Определяем dev-режим
   const isDev = initData === "dev" || initData === "test_init_data";
 
-  // Синхронизируем ref с состоянием
+  // Обновляем множитель при изменении playerState
   useEffect(() => {
-    localCoinsRef.current = localCoins;
-  }, [localCoins]);
-
-  useEffect(() => {
+    if (!playerState) return;
+    // TODO: вычислить множитель из улучшений
     setClickMultiplier(1);
   }, [playerState]);
 
-  useEffect(() => {
-    if (playerState) {
-      setLocalCoins(playerState.player.coins);
-      localCoinsRef.current = playerState.player.coins;
-      setIncomePerSec(playerState.income_per_second);
-    }
-  }, [playerState]);
-
-  // Пассивный доход на клиенте
-  useEffect(() => {
-    if (incomePerSec === 0) return;
-
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
-    intervalRef.current = setInterval(() => {
-      setLocalCoins((prev) => prev + incomePerSec);
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [incomePerSec]);
-
-  // Сохраняем доход перед уходом с вкладки (при размонтировании компонента)
-  useEffect(() => {
-    return () => {
-      // Предотвращаем двойной вызов
-      if (isLeavingRef.current) return;
-      isLeavingRef.current = true;
-
-      const earnedCoins = localCoinsRef.current - (playerState?.player.coins || 0);
-
-      if (isDev) {
-        // DEV-режим: сохраняем в localStorage
-        if (earnedCoins > 0) {
-          try {
-            const saved = localStorage.getItem("dev_offline_coins");
-            const current = saved ? parseInt(saved, 10) : 0;
-            localStorage.setItem("dev_offline_coins", String(current + earnedCoins));
-            console.log(`💾 DEV: сохранено ${earnedCoins} монет при уходе`);
-          } catch (e) {}
-        }
-        return;
-      }
-
-      // PROD-режим: синхронизируем с сервером
-      if (earnedCoins > 0 || pendingTaps > 0) {
-        console.log(`🔄 Синхронизация перед уходом: +${earnedCoins} монет, +${pendingTaps} тапов`);
-
-        // Асинхронный запрос без ожидания (fire-and-forget)
-        syncTaps(initData, pendingTaps, Math.floor(earnedCoins))
-          .then((result) => {
-            console.log("✅ Синхронизировано перед уходом");
-            if (result.player) {
-              onSync(result.player, result.income_per_second, result.click_multiplier);
-            }
-          })
-          .catch((err) => {
-            console.error("❌ Ошибка синхронизации перед уходом:", err);
-          });
-      }
-    };
-  }, [initData, playerState, pendingTaps, onSync, isDev]);
-
-  // Периодическая синхронизация (только для PROD)
+  // Периодическая синхронизация накопленных тапов с сервером
   useEffect(() => {
     if (isDev) return;
+    if (!playerState) return;
 
     const syncInterval = setInterval(async () => {
-      const now = Date.now();
-      const secondsSince = (now - lastSyncRef.current) / 1000;
-      const earnedCoins = Math.floor(secondsSince * incomePerSec);
-
-      if (pendingTaps === 0 && earnedCoins === 0) return;
+      const tapsToSend = pendingTapsRef.current;
+      if (tapsToSend === 0) return;
 
       try {
-        const result = await syncTaps(initData, pendingTaps, earnedCoins);
-        onSync(result.player, result.income_per_second, result.click_multiplier);
-        setPendingTaps(0);
-        setLocalCoins(result.player.coins);
-        localCoinsRef.current = result.player.coins;
+        const result = await syncTaps(initData, tapsToSend, 0);
+        if (result.player) {
+          onSync(result.player, result.income_per_second, result.click_multiplier);
+        }
+        pendingTapsRef.current = 0;
         lastSyncRef.current = Date.now();
       } catch (error) {
         console.error("Sync failed:", error);
       }
-    }, 30000);
+    }, 5000); // синхронизируем каждые 5 секунд
 
     return () => clearInterval(syncInterval);
-  }, [initData, pendingTaps, incomePerSec, onSync, isDev]);
+  }, [initData, onSync, isDev, playerState]);
 
   const handleTap = useCallback(() => {
-    setPendingTaps((prev) => prev + 1);
-    setLocalCoins((prev) => prev + clickMultiplier);
+    pendingTapsRef.current += 1;
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 160);
+
+    // Мгновенно обновляем локальное отображение (оптимистичное обновление)
+    if (playerState) {
+      onSync(
+        { ...playerState.player, coins: playerState.player.coins + clickMultiplier },
+        playerState.income_per_second,
+        clickMultiplier,
+      );
+    }
 
     if (loadGameSettings().vibration) {
       const twa = (window as unknown as { Telegram?: { WebApp?: { HapticFeedback?: { impactOccurred: (s: string) => void } } } })
         .Telegram?.WebApp;
       twa?.HapticFeedback?.impactOccurred("light");
     }
-  }, [clickMultiplier]);
-
-  // Восстанавливаем сохранённые монеты при монтировании (только для DEV)
-  useEffect(() => {
-    if (!isDev) return;
-
-    try {
-      const saved = localStorage.getItem("dev_offline_coins");
-      if (saved) {
-        const coins = parseInt(saved, 10);
-        if (coins > 0) {
-          setLocalCoins(prev => prev + coins);
-          localStorage.removeItem("dev_offline_coins");
-          console.log(`💰 DEV: восстановлено ${coins} монет после возврата`);
-        }
-      }
-    } catch (e) {}
-  }, [isDev]);
+  }, [clickMultiplier, playerState, onSync]);
 
   if (!playerState) {
     return <div className="flex justify-center p-8 text-zinc-500">Загрузка...</div>;
@@ -163,7 +79,6 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
 
   return (
     <div className="relative z-10 flex w-full max-w-md flex-col items-center px-3 pb-4 pt-1">
-      {/* HUD как в референсе: валюта по центру, ниже — доход/сек */}
       <div className="mb-5 flex flex-col items-center text-center">
         <div className="flex items-baseline justify-center gap-2">
           <span
@@ -173,18 +88,17 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
             ◆
           </span>
           <p className="font-pixel text-3xl font-bold leading-none tracking-tight text-cyan-100 drop-shadow-[0_0_14px_rgba(34,211,238,0.45)] sm:text-4xl">
-            {Math.floor(localCoins).toLocaleString("ru-RU")}
+            {Math.floor(playerState.player.coins).toLocaleString("ru-RU")}
           </p>
         </div>
         <p className="font-pixel mt-2 text-sm text-cyan-400/95">
-          +{incomePerSec} хеш/сек
+          +{playerState.income_per_second} хеш/сек
         </p>
         <p className="font-pixel mt-1 text-[10px] uppercase tracking-wide text-amber-200/50">
           токены
         </p>
       </div>
 
-      {/* Центральный тап: свечение «капли/монеты» */}
       <div className="relative flex h-[220px] w-[220px] items-center justify-center sm:h-[240px] sm:w-[240px]">
         <div
           className="pointer-events-none absolute inset-[-12%] rounded-full bg-cyan-400/15 blur-2xl animate-tap-glow"
@@ -218,9 +132,9 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
         <p className="font-pixel mt-3 text-xs text-violet-300">✨ x{clickMultiplier} за тап</p>
       )}
 
-      {pendingTaps > 0 && !isDev && (
+      {pendingTapsRef.current > 0 && !isDev && (
         <p className="font-pixel mt-2 text-[10px] text-amber-200/40">
-          синхр… +{pendingTaps} тап
+          синхр… +{pendingTapsRef.current} тап
         </p>
       )}
     </div>

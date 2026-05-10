@@ -70,7 +70,6 @@ function LabTopBar(props: {
           type="button"
           onClick={props.onOpenDaily}
           className="tap-target relative rounded-md border-2 border-amber-700/60 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-amber-100"
-          aria-label="Ежедневная награда"
         >
           <span aria-hidden>📅</span>
           {props.showDailyBadge ? (
@@ -83,7 +82,6 @@ function LabTopBar(props: {
           type="button"
           onClick={props.onOpenSettings}
           className="tap-target rounded-md border-2 border-zinc-600 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-zinc-200"
-          aria-label="Настройки"
         >
           ⚙
         </button>
@@ -153,6 +151,28 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
+  // Глобальный таймер для пассивного дохода — ЕДИНСТВЕННЫЙ источник
+  useEffect(() => {
+    if (!playerState) return;
+    if (playerState.income_per_second === 0) return;
+
+    const interval = setInterval(() => {
+      setPlayerState(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          player: {
+            ...prev.player,
+            coins: prev.player.coins + prev.income_per_second,
+            total_earned_all_time: prev.player.total_earned_all_time + prev.income_per_second,
+          },
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [playerState?.income_per_second]);
+
   useEffect(() => {
     if (!initData || !playerState) return;
     void fetchDailyRewardStatus(initData)
@@ -195,7 +215,7 @@ export default function Home() {
       prev
         ? {
             ...prev,
-            player: { ...prev.player, ...newPlayer },
+            player: newPlayer,
             income_per_second: incomePerSecond,
           }
         : null,
@@ -299,10 +319,8 @@ export default function Home() {
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
       >
-        {activeTab !== null && <GameHeader playerState={playerState} />}
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {renderContent()}
-        </div>
+        <GameHeader playerState={playerState} />
+        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
         <BottomDock active={activeTab} onChange={handleTabChange} />
         {playerState && (
           <DailyRewardModal
@@ -322,6 +340,7 @@ export default function Home() {
   );
 }
 
+// DevHome
 function DevHome() {
   const [playerState, setPlayerState] = useState<PlayerState>({
     player: {
@@ -338,9 +357,9 @@ function DevHome() {
     items: [],
     upgrades: [],
     available_items: [
-      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10 },
-      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50 },
-      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120 },
+      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10, icon_name: "" },
+      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50, icon_name: "" },
+      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120, icon_name: "" },
     ],
     available_upgrades: [
       {
@@ -350,6 +369,7 @@ function DevHome() {
         value: 2.0,
         base_price: 500,
         min_total_taps: 0,
+        icon_name: "",
       },
     ],
     income_per_second: 10,
@@ -358,6 +378,23 @@ function DevHome() {
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
+
+  // Глобальный таймер для DEV
+  useEffect(() => {
+    if (playerState.income_per_second === 0) return;
+
+    const interval = setInterval(() => {
+      setPlayerState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + prev.income_per_second,
+        },
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [playerState.income_per_second]);
 
   useEffect(() => {
     void fetchDailyRewardStatus("dev")
@@ -374,7 +411,7 @@ function DevHome() {
   };
 
   const handleSync = (newPlayer: PlayerState["player"], incomePerSecond: number) => {
-    setPlayerState((prev) => ({
+    setPlayerState(prev => ({
       ...prev,
       player: { ...prev.player, ...newPlayer },
       income_per_second: incomePerSecond,
@@ -387,7 +424,7 @@ function DevHome() {
     setActiveTab(null);
   };
   const handleDailyReward = (coins: number, crystals: number) => {
-    setPlayerState((prev) => ({
+    setPlayerState(prev => ({
       ...prev,
       player: {
         ...prev.player,
@@ -421,17 +458,9 @@ function DevHome() {
 
     switch (activeTab) {
       case "lab":
-        return (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <ItemShop initData="dev" playerState={playerState} onPurchase={handlePurchase} />
-          </div>
-        );
+        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><ItemShop initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
       case "upgrades":
-        return (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
-          </div>
-        );
+        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
       case "goals":
         return (
           <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pt-3">
@@ -451,11 +480,7 @@ function DevHome() {
           </div>
         );
       case "top":
-        return (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <LeaderboardPanel initData="dev" />
-          </div>
-        );
+        return <div className="flex min-h-0 flex-1 flex-col"><LeaderboardPanel initData="dev" /></div>;
       default:
         return null;
     }
@@ -463,13 +488,9 @@ function DevHome() {
 
   return (
     <MobileAppFrame>
-      <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
-      >
-        {activeTab !== null && <GameHeader playerState={playerState} />}
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {renderContent()}
-        </div>
+      <div className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}>
+        <GameHeader playerState={playerState} />
+        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
         <BottomDock active={activeTab} onChange={handleTabChangeDev} />
         <DailyRewardModal
           open={dailyModalOpen}
