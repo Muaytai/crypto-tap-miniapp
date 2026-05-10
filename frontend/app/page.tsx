@@ -17,6 +17,7 @@ import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MiningRoomBackground } from "@/components/MiningRoomBackground";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
+import { PowerCxtWatermark } from "@/components/PowerCxtWatermark";
 import { fetchDailyRewardStatus, fetchFullState, type PlayerState } from "@/lib/api";
 import { watchTelegramInitData } from "@/lib/telegram";
 
@@ -92,7 +93,7 @@ function LabTopBar(props: {
 
 function BottomDock(props: { active: DockTab; onChange: (t: DockTab) => void }) {
   return (
-    <nav className="z-30 shrink-0 border-t-4 border-amber-950 bg-[#14100c]/98 pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="z-30 shrink-0 border-t-4 border-amber-950 bg-[#14100c]/98">
       <div className="flex justify-between gap-0.5 px-1 py-2">
         {DOCK.map((tab) => {
           const on = props.active === tab.id;
@@ -440,6 +441,7 @@ function DevHome() {
           {renderContent()}
         </div>
         <BottomDock active={activeTab} onChange={setActiveTab} />
+        <PowerCxtWatermark />
         <DailyRewardModal
           open={dailyModalOpen}
           onClose={() => setDailyModalOpen(false)}
