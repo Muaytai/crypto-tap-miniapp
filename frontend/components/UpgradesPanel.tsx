@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buyUpgrade, type PlayerState } from "@/lib/api";
+import { ItemShop } from "@/components/ItemShop";
 
 type Props = {
   initData: string;
