@@ -13,10 +13,71 @@ type Props = {
 export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMultiplier, setSelectedMultiplier] = useState<1 | 10 | 50>(1);
+  // Определяем, в dev-режиме ли мы
+  const isDev = initData === "dev" || initData === "test_init_data";
 
   const handleBuy = async (itemId: number, quantity: number) => {
     setLoading(itemId);
     setError(null);
+
+    // DEV-режим: имитируем покупку локально
+    if (isDev) {
+      const item = playerState.available_items.find(i => i.id === itemId);
+      if (!item) {
+        setError("Предмет не найден");
+        setLoading(null);
+        return;
+      }
+
+      const currentQty = playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
+
+      // Рассчитываем цену (локально)
+      let price = item.base_price;
+      for (let i = 0; i < quantity; i++) {
+        price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
+      }
+
+      if (playerState.player.coins < price) {
+        setError(`Не хватает монет! Нужно ${price.toLocaleString("ru-RU")}`);
+        setLoading(null);
+        return;
+      }
+
+      // Имитируем успешную покупку
+      setTimeout(() => {
+        const newQty = currentQty + quantity;
+        const updatedState = {
+          ...playerState,
+          player: {
+            ...playerState.player,
+            coins: playerState.player.coins - price,
+          },
+          items: playerState.items.map(item =>
+            item.item_id === itemId
+              ? { ...item, quantity: newQty }
+              : item
+          ),
+          income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
+        };
+
+        // Если предмета не было в списке, добавляем
+        if (!playerState.items.some(i => i.item_id === itemId)) {
+          updatedState.items.push({
+            item_id: itemId,
+            item_name: item.name,
+            quantity: newQty,
+            item_base_income: item.base_income_per_second,
+          });
+        }
+
+        onPurchase(updatedState);
+        setLoading(null);
+      }, 300);
+      return;
+    }
+
+    // Реальный API-запрос
     try {
       const result = await buyItem(initData, itemId, quantity);
       if (result.success) {
@@ -65,75 +126,91 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
   };
   const allItems = playerState.available_items;
+  const currentMultiplier = selectedMultiplier;
 
   return (
-    <div className="flex flex-col gap-3 px-3 pb-4">
-      <div className="mb-1 border-b-2 border-amber-800/40 pb-1.5">
-        <h2 className="font-pixel text-sm font-bold uppercase tracking-wide text-amber-100">
-          Магазин
-        </h2>
+    <div className="shop-container flex flex-col gap-4 px-4 pb-6">
+      {/* Заголовок */}
+      <div className="shop-header">
+        <h1 className="shop-title">МАГАЗИН</h1>
+      </div>
+
+      {/* Кнопки кратности */}
+      <div className="multiplier-bar flex items-center justify-center gap-3">
+        <span className="multiplier-label">Кратность:</span>
+        <div className="multiplier-buttons flex gap-2">
+          {[1, 10, 50].map((mult) => (
+            <button
+              key={mult}
+              onClick={() => setSelectedMultiplier(mult as 1 | 10 | 50)}
+              className={`multiplier-btn px-4 py-1 font-pixel text-sm transition ${
+                currentMultiplier === mult
+                  ? "border-amber-500 bg-amber-500/20 text-amber-300"
+                  : "border-amber-700/50 text-amber-500/70 hover:border-amber-500/50"
+              }`}
+            >
+              x{mult}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
-        <div className="border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200">
+        <div className="error-message border-2 border-red-700/50 bg-red-950/40 p-2 font-pixel text-[10px] text-red-200 text-center">
           {error}
         </div>
       )}
 
-      {/* Кнопки x1 x10 x50 */}
-      <div className="flex gap-2 border-b border-amber-800/30 pb-2">
-        <span className="font-pixel text-xs text-amber-500">Кратность:</span>
-        <div className="flex gap-2">
-          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x1</button>
-          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x10</button>
-          <button className="font-pixel rounded border border-cyan-500/50 px-2 py-0.5 text-xs text-cyan-400">x50</button>
+      {/* DEV-режим предупреждение */}
+      {isDev && (
+        <div className="dev-warning border-2 border-amber-700/50 bg-amber-950/40 p-2 font-pixel text-[10px] text-amber-300 text-center">
+          ⚡ DEV-режим: покупки работают локально без сервера
         </div>
-      </div>
+      )}
 
-      <div className="flex flex-col gap-3">
+      {/* Список предметов */}
+      <div className="shop-items flex flex-col gap-4">
         {allItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
-          const price1 = getPriceForQuantity(item, currentQty, 1);
-          const canAfford = playerState.player.coins >= price1;
-          const price10 = getPriceForQuantity(item, currentQty, 10);
-          const price50 = getPriceForQuantity(item, currentQty, 50);
-          const canAfford1 = playerState.player.coins >= price1;
-
+          const priceForSelected = getPriceForQuantity(item, currentQty, currentMultiplier);
+          const canAfford = playerState.player.coins >= priceForSelected;
           const visual = cryptoItemVisual(item.name);
+
           return (
-            <div
-              key={item.id}
-              className="flex items-center justify-between border-b border-amber-800/25 py-2 last:border-b-0"
-            >
-              {/* Левая часть: иконка + название + доход */}
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 flex-col items-center justify-center rounded border border-cyan-600/30 bg-cyan-950/20">
-                  <span className="text-xl">{visual.emoji}</span>
-                  <span className="font-pixel text-[8px] text-cyan-400/70">{visual.tag}</span>
+            <div key={item.id} className="shop-item">
+              <div className="shop-item-left">
+                {/* Иконка */}
+                <div className="item-icon">
+                  <span className="item-emoji">{visual.emoji}</span>
+                  <span className="item-tag">{visual.tag}</span>
                 </div>
-                <div>
-                  <h3 className="font-pixel text-sm text-amber-50">{item.name}</h3>
-                  <p className="font-pixel text-[10px] text-cyan-400">
-                    +{item.base_income_per_second.toLocaleString("ru-RU")}/сек
-                  </p>
+
+                {/* Информация */}
+                <div className="item-info">
+                  <h3 className="item-name">{item.name}</h3>
+                  <p className="item-income">+{item.base_income_per_second.toLocaleString("ru-RU")}/сек</p>
+                </div>
+
+                {/* Количество купленных */}
+                <div className="item-quantity">
+                  <span className="quantity-number">{currentQty}</span>
                 </div>
               </div>
 
-              {/* Правая часть: количество + цена + кнопка */}
-              <div className="flex items-center gap-2 text-right">
-                <span className="font-pixel min-w-[3rem] text-base font-bold text-amber-300">
-                  {currentQty}
-                </span>
+              <div className="shop-item-right">
+                {/* Цена над кнопкой */}
+                <div className="item-price">
+                  <span className="price-icon">⏱️</span>
+                  <span className="price-value">{priceForSelected.toLocaleString("ru-RU")}</span>
+                </div>
+
+                {/* Кнопка покупки */}
                 <button
-                  onClick={() => handleBuy(item.id, 1)}
+                  onClick={() => handleBuy(item.id, currentMultiplier)}
                   disabled={loading === item.id || !canAfford}
-                  className={`tap-target font-pixel border px-3 py-1.5 text-[11px] transition ${
-                    canAfford
-                      ? "border-cyan-500/60 bg-gradient-to-b from-cyan-700 to-blue-800 text-white active:translate-y-px"
-                      : "cursor-not-allowed border-zinc-700 bg-zinc-900 text-zinc-600"
-                  }`}
+                  className={`buy-btn ${canAfford ? "can-buy" : "cannot-buy"}`}
                 >
-                  {price1.toLocaleString("ru-RU")}
+                  {loading === item.id ? "..." : "Купить"}
                 </button>
               </div>
             </div>
@@ -142,7 +219,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {allItems.length === 0 && (
-        <p className="py-8 text-center font-pixel text-xs text-zinc-500">
+        <p className="empty-shop text-center font-pixel text-xs text-zinc-500 py-8">
           Магазин пуст
         </p>
       )}
