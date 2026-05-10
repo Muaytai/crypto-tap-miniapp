@@ -14,9 +14,8 @@ import { UpgradesPanel } from "@/components/UpgradesPanel";
 import { PrestigePanel } from "@/components/PrestigePanel";
 import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
-import { CelestialPanel } from "@/components/CelestialPanel";
 
-type DockTab = "game" | "shop" | "upgrades" | "prestige" | "celestial" | "profile" | "top";
+type DockTab = "game" | "shop" | "upgrades" | "prestige" | "profile" | "top";
 
 export function TapGame() {
   const [initData, setInitData] = useState("");
@@ -38,11 +37,12 @@ export function TapGame() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const tab = dockTabFromHash() as DockTab;
-    setDockTab(tab === "profile" ? "profile" : tab === "top" ? "top" : tab === "game" ? "game" : "game");
+    const allowedTabs: DockTab[] = ["game", "shop", "upgrades", "prestige", "profile", "top"];
+    setDockTab(allowedTabs.includes(tab) ? tab : "game");
 
     const onHash = () => {
       const newTab = dockTabFromHash() as DockTab;
-      setDockTab(newTab === "profile" ? "profile" : newTab === "top" ? "top" : "game");
+      setDockTab(allowedTabs.includes(newTab) ? newTab : "game");
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -175,13 +175,6 @@ export function TapGame() {
             initData={initData}
             playerState={playerState}
             onPrestige={handlePrestige}
-          />
-        );
-      case "celestial":
-        return (
-          <CelestialPanel
-            initData={initData}
-            playerState={playerState}
             onUpdate={handlePurchase}
           />
         );
@@ -280,7 +273,7 @@ export function TapGame() {
       </div>
 
       {/* Основной контент */}
-      <div className="flex-1 pb-20">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-20">
         {renderContent()}
       </div>
 
@@ -291,8 +284,7 @@ export function TapGame() {
             { id: "game", label: "🎮", title: "Игра" },
             { id: "shop", label: "🛒", title: "Магазин" },
             { id: "upgrades", label: "⚡", title: "Улучшения" },
-            { id: "prestige", label: "🔥", title: "Закалка" },
-            { id: "celestial", label: "🌌", title: "Небесные" },
+            { id: "prestige", label: "💎", title: "Закалка" },
             { id: "profile", label: "👤", title: "Профиль" },
             { id: "top", label: "🏆", title: "Топ" },
           ].map((tab) => (
