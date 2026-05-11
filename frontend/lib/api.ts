@@ -207,6 +207,14 @@ export async function getPrestigeStatus(initData: string): Promise<{
   return apiFetch("/api/prestige/", { initData }) as Promise<any>;
 }
 
+/** Одна ячейка сетки «день 1 … 7» для ежедневной награды. */
+export type DailyRewardDaySlot = {
+  day: number;
+  reward_coins: number;
+  reward_crystals: number;
+  status: "claimed" | "claimable" | "locked";
+};
+
 /** Статус ежедневки без начисления (GET). */
 export type DailyRewardStatus = {
   can_claim: boolean;
@@ -220,6 +228,8 @@ export type DailyRewardStatus = {
   reward_crystals: number;
   days_to_weekly_bonus: number;
   weekly_bonus_crystals: number;
+  /** Сетка из 7 дней с наградами и состоянием (сервер; при отсутствии — собрать на клиенте). */
+  day_schedule?: DailyRewardDaySlot[];
   message: string;
 };
 
@@ -227,11 +237,51 @@ function isLocalDailyMock(initData: string): boolean {
   return initData === "dev" || initData === "test_init_data";
 }
 
+/** Базовые награды по дням (совпадают с seed_daily_rewards); без статуса. */
+export const DAILY_REWARD_TEMPLATE: Omit<DailyRewardDaySlot, "status">[] = [
+  { day: 1, reward_coins: 1_000, reward_crystals: 0 },
+  { day: 2, reward_coins: 2_500, reward_crystals: 0 },
+  { day: 3, reward_coins: 5_000, reward_crystals: 0 },
+  { day: 4, reward_coins: 10_000, reward_crystals: 0 },
+  { day: 5, reward_coins: 20_000, reward_crystals: 0 },
+  { day: 6, reward_coins: 40_000, reward_crystals: 0 },
+  { day: 7, reward_coins: 0, reward_crystals: 5 },
+];
+
+/** Если бэкенд ещё без day_schedule — собираем так же, как в API. */
+export function resolveDailyDaySchedule(status: DailyRewardStatus): DailyRewardDaySlot[] {
+  if (status.day_schedule && status.day_schedule.length === 7) {
+    return status.day_schedule;
+  }
+  const base = DAILY_REWARD_TEMPLATE.map((row) => ({
+    reward_coins: row.reward_coins,
+    reward_crystals: row.reward_crystals,
+    day: row.day,
+  }));
+  if (status.can_claim) {
+    const claimSlot = ((Math.max(status.next_reward_day, 1) - 1) % 7) + 1;
+    return base.map((row) => ({
+      ...row,
+      status:
+        row.day < claimSlot ? "claimed" : row.day === claimSlot ? ("claimable" as const) : ("locked" as const),
+    }));
+  }
+  const lastSlot = ((Math.max(status.current_streak, 1) - 1) % 7) + 1;
+  return base.map((row) => ({
+    ...row,
+    status: row.day <= lastSlot ? ("claimed" as const) : ("locked" as const),
+  }));
+}
+
 function buildMockDailyStatus(claimedToday = false): DailyRewardStatus {
   const daySlot = 1;
+  const day_schedule: DailyRewardDaySlot[] = DAILY_REWARD_TEMPLATE.map((row) => ({
+    ...row,
+    status: claimedToday ? (row.day === 1 ? "claimed" : "locked") : row.day === 1 ? "claimable" : "locked",
+  }));
   return {
     can_claim: !claimedToday,
-    current_streak: 0,
+    current_streak: claimedToday ? 1 : 0,
     max_streak: 3,
     last_claim_date: claimedToday ? new Date().toISOString().slice(0, 10) : null,
     streak_display: 1,
@@ -241,6 +291,7 @@ function buildMockDailyStatus(claimedToday = false): DailyRewardStatus {
     reward_crystals: 0,
     days_to_weekly_bonus: 7 - daySlot,
     weekly_bonus_crystals: 5,
+    day_schedule,
     message: claimedToday ? "Награда уже получена сегодня. Загляните завтра!" : "",
   };
 }
@@ -273,6 +324,9 @@ export async function fetchAchievements(initData: string): Promise<{
   }>;
   new_achievements: Array<any>;
 }> {
+  if (isLocalDailyMock(initData)) {
+    return fetchPublicJson("/api/test-list-achievements/?telegram_id=777") as Promise<any>;
+  }
   return apiFetch("/api/achievements/", { initData }) as Promise<any>;
 }
 
