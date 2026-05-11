@@ -24,11 +24,13 @@ type Achievement = {
 export function AchievementsList({ initData, playerState, onReward }: Props) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const loadAchievements = async () => {
       try {
+        setLoadError(null);
         const data = await fetchAchievements(initData);
         setAchievements(data.achievements);
         if (data.new_achievements?.length > 0) {
@@ -44,6 +46,8 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         }
       } catch (err) {
         console.error("Failed to load achievements:", err);
+        setAchievements([]);
+        setLoadError(err instanceof Error ? err.message : "Ошибка загрузки");
       } finally {
         setLoading(false);
       }
@@ -121,7 +125,28 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
       <div className="flex flex-col gap-2.5">
         {achievements.length === 0 ? (
           <div className="rounded-xl border border-[#3a424c] bg-[#1a2028] p-4 text-center font-pixel text-xs text-[#8f9bab]">
-            Достижения скоро появятся
+            {loadError ? (
+              <>
+                <p className="text-amber-200/90">Не удалось загрузить достижения</p>
+                {process.env.NODE_ENV === "development" ? (
+                  <p className="mt-2 break-all text-[10px] text-zinc-500">{loadError}</p>
+                ) : (
+                  <p className="mt-2 text-[10px] text-zinc-500">Проверьте соединение и откройте вкладку снова.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p>Достижения скоро появятся</p>
+                {process.env.NODE_ENV === "development" ? (
+                  <p className="mt-2 text-[10px] text-zinc-500">
+                    Если список должен быть полным: на бэкенде{" "}
+                    <span className="font-mono text-zinc-400">migrate</span> /{" "}
+                    <span className="font-mono text-zinc-400">seed_achievements</span> (миграция 0007 сидит
+                    автоматически).
+                  </p>
+                ) : null}
+              </>
+            )}
           </div>
         ) : (
           achievements.map((ach) => {
