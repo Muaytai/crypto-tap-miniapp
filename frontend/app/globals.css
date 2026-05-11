@@ -260,13 +260,10 @@ body {
 .ach-bubble--2 {
   animation-delay: 0.45s;
 }
-@font-face {
-  font-family: 'Pixel';
-  src: url('/fonts/pixel.ttf') format('truetype');
-}
 
+/* Пиксельный вид: локального pixel.ttf в репозитории нет — используем Silkscreen из layout.tsx (--font-silkscreen). */
 .font-pixel {
-  font-family: 'Pixel', monospace;
+  font-family: var(--font-silkscreen), ui-monospace, monospace;
 }
 
 
