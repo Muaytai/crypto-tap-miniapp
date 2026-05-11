@@ -23,6 +23,13 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
+# Dev tunnels (Cloudflare/localtunnel) change hostnames often.
+# Allow their wildcard domains automatically in DEBUG mode.
+if DEBUG:
+    for dev_host in (".trycloudflare.com", ".loca.lt"):
+        if dev_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(dev_host)
+
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 # @username без @ — для реферальных ссылок во фронте (если не задан NEXT_PUBLIC_TELEGRAM_BOT_USERNAME)
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "").strip().lstrip("@")

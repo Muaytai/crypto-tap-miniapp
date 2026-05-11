@@ -32,6 +32,41 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Leaderboard ("Топ/Рейтинг") */
+.lb-tabs {
+  position: relative;
+  border-radius: 18px;
+  background: rgba(10, 16, 32, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  padding: 4px;
+}
+
+.lb-tab {
+  position: relative;
+  border-radius: 14px;
+}
+
+.lb-tab--active {
+  background: linear-gradient(to bottom, #0ea5e9, #075985);
+  box-shadow:
+    0 10px 22px -16px rgba(56, 189, 248, 0.7),
+    inset 0 2px 0 rgba(255, 255, 255, 0.12);
+  z-index: 1;
+}
+
+.lb-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -10px;
+  height: 14px;
+  border-bottom-left-radius: 999px;
+  border-bottom-right-radius: 999px;
+  background: linear-gradient(to bottom, #075985, #064e3b00);
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.35));
+}
+
 /* Экран «Лаба»: плитка + ощущение мастерской как в пиксель-референсе */
 .lab-workshop {
   background-color: #2a2319;

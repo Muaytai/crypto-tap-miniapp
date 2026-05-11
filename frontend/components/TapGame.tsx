@@ -17,7 +17,7 @@ import { AchievementsList } from "@/components/AchievementsList";
 import { CelestialPanel } from "@/components/CelestialPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 
-type DockTab = "game" | "shop" | "upgrades" | "prestige" | "celestial" | "profile" | "top";
+type DockTab = "game" | "shop" | "upgrades" | "prestige" | "profile" | "top";
 
 // Названия кнопок под референс
 const TAB_LABELS: Record<DockTab, { label: string; icon: string }> = {
@@ -50,11 +50,12 @@ export function TapGame() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const tab = dockTabFromHash() as DockTab;
-    setDockTab(tab === "profile" ? "profile" : tab === "top" ? "top" : tab === "game" ? "game" : "game");
+    const allowedTabs: DockTab[] = ["game", "shop", "upgrades", "prestige", "profile", "top"];
+    setDockTab(allowedTabs.includes(tab) ? tab : "game");
 
     const onHash = () => {
       const newTab = dockTabFromHash() as DockTab;
-      setDockTab(newTab === "profile" ? "profile" : newTab === "top" ? "top" : "game");
+      setDockTab(allowedTabs.includes(newTab) ? newTab : "game");
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
