@@ -17,6 +17,15 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
   // Определяем, в dev-режиме ли мы
   const isDev = initData === "dev" || initData === "test_init_data";
 
+  // Функция для расчёта цены с учётом текущего количества и множителя
+  const calculatePrice = (item: PlayerState["available_items"][0], currentQty: number, quantity: number): number => {
+    let price = item.base_price;
+    for (let i = 0; i < quantity; i++) {
+      price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
+    }
+    return price;
+  };
+
   const handleBuy = async (itemId: number, quantity: number) => {
     setLoading(itemId);
     setError(null);
@@ -31,12 +40,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       }
 
       const currentQty = playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
-
-      // Рассчитываем цену (локально)
-      let price = item.base_price;
-      for (let i = 0; i < quantity; i++) {
-        price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
-      }
+      const price = calculatePrice(item, currentQty, quantity);
 
       if (playerState.player.coins < price) {
         setError(`Не хватает монет! Нужно ${price.toLocaleString("ru-RU")}`);
@@ -47,6 +51,18 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       // Имитируем успешную покупку
       setTimeout(() => {
         const newQty = currentQty + quantity;
+
+        const updatedAvailableItems = playerState.available_items.map(i => {
+          if (i.id === itemId) {
+            let nextPrice = item.base_price;
+            for (let j = 0; j < newQty; j++) {
+              nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
+            }
+            return { ...i, base_price: nextPrice };
+          }
+          return i;
+        });
+
         const updatedState = {
           ...playerState,
           player: {
@@ -58,6 +74,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
               ? { ...item, quantity: newQty }
               : item
           ),
+          available_items: updatedAvailableItems,
           income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
         };
 
@@ -118,17 +135,15 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     }
   };
 
-  const getPriceForQuantity = (item: PlayerState["available_items"][0], currentQty: number, qty: number): number => {
-    let price = item.base_price;
-    for (let i = 0; i < qty; i++) {
-      price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
-    }
-    return price;
+  const getPriceForDisplay = (item: PlayerState["available_items"][0], quantity: number): number => {
+    const currentQty = playerState.items.find(i => i.item_id === item.id)?.quantity || 0;
+    return calculatePrice(item, currentQty, quantity);
   };
 
   const getCurrentQuantity = (itemId: number): number => {
     return playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
   };
+
   const allItems = playerState.available_items;
   const currentMultiplier = selectedMultiplier;
 
@@ -176,31 +191,17 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       <div className="shop-items flex flex-col gap-4">
         {allItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
-          const priceForSelected = getPriceForQuantity(item, currentQty, currentMultiplier);
+          const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
-          const iconName = item.icon_name;
-          const hasIcon = iconName && iconName.trim() !== "";
+          const visual = cryptoItemVisual(item.name);
 
           return (
             <div key={item.id} className="shop-item">
               <div className="shop-item-left">
                 {/* Иконка */}
                 <div className="item-icon">
-                  {hasIcon ? (
-                    <img
-                      src={`/images/items/${iconName}.png`}
-                      alt={item.name}
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        (e.target as HTMLImageElement).nextSibling?.style?.setProperty('display', 'flex');
-                      }}
-                    />
-                  ) : null}
-                  <span className="item-emoji" style={{ display: hasIcon ? 'none' : 'flex' }}>
-                    {item.name.includes("GPU") ? "🖥️" : item.name.includes("ASIC") ? "⚙️" : "🔧"}
-                  </span>
-                  <span className="item-tag">{item.name.slice(0, 3).toUpperCase()}</span>
+                  <span className="item-emoji">{visual.emoji}</span>
+                  <span className="item-tag">{visual.tag}</span>
                 </div>
 
                 {/* Информация */}
