@@ -105,6 +105,7 @@ export function DevTapGame() {
             initData="dev"
             playerState={playerState}
             onPrestige={handlePrestige}
+            onUpdate={handlePurchase}
           />
         );
       case "celestial":

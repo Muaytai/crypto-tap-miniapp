@@ -12,7 +12,6 @@ import { DailyRewardModal } from "@/components/DailyRewardModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AchievementsList } from "@/components/AchievementsList";
 import { PrestigePanel } from "@/components/PrestigePanel";
-import { CelestialPanel } from "@/components/CelestialPanel";
 import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MiningRoomBackground } from "@/components/MiningRoomBackground";
@@ -256,12 +255,13 @@ export default function Home() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 p-3">
-            <PrestigePanel initData={initData} playerState={playerState} onPrestige={handlePrestige} />
-            <div className="border-2 border-violet-700/40 bg-[#0f0c14]/90 p-3">
-              <p className="mb-2 font-pixel text-xs text-violet-200">Небесные апгрейды</p>
-              <CelestialPanel initData={initData} playerState={playerState} onUpdate={handlePurchase} />
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+            <PrestigePanel
+              initData={initData}
+              playerState={playerState}
+              onPrestige={handlePrestige}
+              onUpdate={handlePurchase}
+            />
           </div>
         );
       case "top":
@@ -409,12 +409,13 @@ function DevHome() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 p-3">
-            <PrestigePanel initData="dev" playerState={playerState} onPrestige={handlePrestige} />
-            <div className="border-2 border-violet-700/40 bg-[#0f0c14]/90 p-3">
-              <p className="mb-2 font-pixel text-xs text-violet-200">Небесные апгрейды</p>
-              <CelestialPanel initData="dev" playerState={playerState} onUpdate={handlePurchase} />
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+            <PrestigePanel
+              initData="dev"
+              playerState={playerState}
+              onPrestige={handlePrestige}
+              onUpdate={handlePurchase}
+            />
           </div>
         );
       case "top":

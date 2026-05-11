@@ -248,6 +248,7 @@ class CelestialUpgrade(models.Model):
         ("tap_bonus", "Бонус к тапам"),
         ("offline_boost", "Увеличение оффлайн лимита"),
         ("auto_tap", "Авто-тап (каждую секунду)"),
+        ("start_boost", "Начальный бонус осколков"),
     ]
     upgrade_type = models.CharField(max_length=50, choices=UPGRADE_TYPES, default="global_income")
 
