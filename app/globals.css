@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --primary: #8b5cf6;
+  --primary-dark: #7c3aed;
+  --secondary: #06b6d4;
+  --secondary-dark: #0891b2;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+}
+
+body {
+  background: #0c0e14;
+  color: #f5edd8;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Экран «Лаба»: плитка + ощущение мастерской как в пиксель-референсе */
+.lab-workshop {
+  background-color: #2a2319;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.14) 1px, transparent 1px),
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgba(56, 189, 248, 0.06), transparent 55%);
+  background-size: 14px 14px, 14px 14px, 100% 100%;
+}
+
+@keyframes tap-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 28px rgba(34, 211, 238, 0.45),
+      0 0 56px rgba(14, 165, 233, 0.2),
+      inset 0 0 24px rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(34, 211, 238, 0.65),
+      0 0 72px rgba(14, 165, 233, 0.35),
+      inset 0 0 28px rgba(255, 255, 255, 0.18);
+  }
+}
+
+.animate-tap-glow {
+  animation: tap-glow 2.8s ease-in-out infinite;
+}
+
+/* Кастомные анимации */
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.4s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s ease infinite;
+}
+
+/* Класс для тап-зон */
+.tap-target {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
