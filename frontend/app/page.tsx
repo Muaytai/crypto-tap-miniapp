@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * Вкладки как в референсе: Лаба (мастерская + тап), Апгр. (улучшения + магазин оборудования), Цели, Закал., Топ.
- * На экране «Лаба» HUD только по центру (см. SimpleTapGame), сверху — иконки как в референсе.
+ * Вкладки как в референсе: Лаба (магазин), Апгр. (улучшения), Цели, Закал., Топ.
+ * По умолчанию — главная страница с тапалкой (activeTab === null).
+ * Повторное нажатие на активную кнопку закрывает меню.
  */
 import { useState, useEffect } from "react";
 import { SimpleTapGame } from "@/components/SimpleTapGame";
+import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
 import { DailyReward } from "@/components/DailyReward";
 import { DailyRewardModal } from "@/components/DailyRewardModal";
@@ -67,7 +69,6 @@ function LabTopBar(props: {
           type="button"
           onClick={props.onOpenDaily}
           className="tap-target relative rounded-md border-2 border-amber-700/60 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-amber-100"
-          aria-label="Ежедневная награда"
         >
           <span aria-hidden>📅</span>
           {props.showDailyBadge ? (
@@ -80,7 +81,6 @@ function LabTopBar(props: {
           type="button"
           onClick={props.onOpenSettings}
           className="tap-target rounded-md border-2 border-zinc-600 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-zinc-200"
-          aria-label="Настройки"
         >
           ⚙
         </button>
@@ -89,7 +89,7 @@ function LabTopBar(props: {
   );
 }
 
-function BottomDock(props: { active: DockTab; onChange: (t: DockTab) => void }) {
+function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => void }) {
   return (
     <nav className="z-30 shrink-0 border-t-4 border-amber-950 bg-[#14100c]/98 pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex justify-between gap-0.5 px-1 py-2">
@@ -122,7 +122,7 @@ export default function Home() {
   const [initData, setInitData] = useState("");
   const [playerState, setPlayerState] = useState<PlayerState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<DockTab>("lab");
+  const [activeTab, setActiveTab] = useState<DockTab | null>(null);
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
@@ -150,12 +150,43 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
+  // Глобальный таймер для пассивного дохода — ЕДИНСТВЕННЫЙ источник
+  useEffect(() => {
+    if (!playerState) return;
+    if (playerState.income_per_second === 0) return;
+
+    const interval = setInterval(() => {
+      setPlayerState(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          player: {
+            ...prev.player,
+            coins: prev.player.coins + prev.income_per_second,
+            total_earned_all_time: prev.player.total_earned_all_time + prev.income_per_second,
+          },
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [playerState?.income_per_second]);
+
   useEffect(() => {
     if (!initData || !playerState) return;
     void fetchDailyRewardStatus(initData)
       .then((s) => setDailyClaimable(s.can_claim))
       .catch(() => setDailyClaimable(false));
   }, [initData, playerState, activeTab]);
+
+  const handleTabChange = (tabId: DockTab) => {
+    // Если нажали на уже активную вкладку — закрываем её (возврат на главную)
+    if (activeTab === tabId) {
+      setActiveTab(null);
+    } else {
+      setActiveTab(tabId);
+    }
+  };
 
   if (!initData) {
     return <DevHome />;
@@ -183,7 +214,7 @@ export default function Home() {
       prev
         ? {
             ...prev,
-            player: { ...prev.player, ...newPlayer },
+            player: newPlayer,
             income_per_second: incomePerSecond,
           }
         : null,
@@ -196,7 +227,7 @@ export default function Home() {
 
   const handlePrestige = (newState: PlayerState) => {
     setPlayerState(newState);
-    setActiveTab("lab");
+    setActiveTab(null); // после закалки возвращаемся на главную
   };
 
   const handleDailyReward = (coins: number, crystals: number) => {
@@ -215,27 +246,35 @@ export default function Home() {
   };
 
   const renderContent = () => {
+    if (activeTab === null) {
+      return (
+        <div className="relative flex min-h-full flex-1 flex-col">
+          <MiningRoomBackground />
+          <div className="relative z-10 flex flex-col">
+            <LabTopBar
+              onOpenDaily={() => setDailyModalOpen(true)}
+              onOpenSettings={() => setSettingsModalOpen(true)}
+              showDailyBadge={dailyClaimable}
+            />
+            <div className="relative flex flex-col">
+              <div className="px-2 pt-2">
+                <CryptoTipBanner
+                  seed={playerState.player.telegram_id}
+                  className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none"
+                />
+              </div>
+              <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "lab":
         return (
-          <div className="relative flex min-h-full flex-1 flex-col">
-            <MiningRoomBackground />
-            <div className="relative z-10 flex flex-col">
-              <LabTopBar
-                onOpenDaily={() => setDailyModalOpen(true)}
-                onOpenSettings={() => setSettingsModalOpen(true)}
-                showDailyBadge={dailyClaimable}
-              />
-              <div className="relative flex flex-col">
-                <div className="px-2 pt-2">
-                  <CryptoTipBanner
-                    seed={playerState.player.telegram_id}
-                    className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none"
-                  />
-                </div>
-                <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
-              </div>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <ItemShop initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
       case "upgrades":
@@ -278,15 +317,11 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
-        }`}
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
       >
-        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div className={`h-full min-h-0 flex-1 ${activeTab === "top" ? "overflow-y-auto" : "overflow-hidden"}`}>
-          {renderContent()}
-        </div>
-        <BottomDock active={activeTab} onChange={setActiveTab} />
+        <GameHeader playerState={playerState} />
+        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
+        <BottomDock active={activeTab} onChange={handleTabChange} />
         {playerState && (
           <DailyRewardModal
             open={dailyModalOpen}
@@ -305,6 +340,7 @@ export default function Home() {
   );
 }
 
+// DevHome
 function DevHome() {
   const [playerState, setPlayerState] = useState<PlayerState>({
     player: {
@@ -321,9 +357,9 @@ function DevHome() {
     items: [],
     upgrades: [],
     available_items: [
-      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10 },
-      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50 },
-      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120 },
+      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10, icon_name: "" },
+      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50, icon_name: "" },
+      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120, icon_name: "" },
     ],
     available_upgrades: [
       {
@@ -333,14 +369,32 @@ function DevHome() {
         value: 2.0,
         base_price: 500,
         min_total_taps: 0,
+        icon_name: "",
       },
     ],
     income_per_second: 10,
   });
-  const [activeTab, setActiveTab] = useState<DockTab>("lab");
+  const [activeTab, setActiveTab] = useState<DockTab | null>(null);
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
+
+  // Глобальный таймер для DEV
+  useEffect(() => {
+    if (playerState.income_per_second === 0) return;
+
+    const interval = setInterval(() => {
+      setPlayerState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + prev.income_per_second,
+        },
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [playerState.income_per_second]);
 
   useEffect(() => {
     void fetchDailyRewardStatus("dev")
@@ -348,8 +402,16 @@ function DevHome() {
       .catch(() => setDailyClaimable(false));
   }, [activeTab]);
 
+  const handleTabChangeDev = (tabId: DockTab) => {
+    if (activeTab === tabId) {
+      setActiveTab(null);
+    } else {
+      setActiveTab(tabId);
+    }
+  };
+
   const handleSync = (newPlayer: PlayerState["player"], incomePerSecond: number) => {
-    setPlayerState((prev) => ({
+    setPlayerState(prev => ({
       ...prev,
       player: { ...prev.player, ...newPlayer },
       income_per_second: incomePerSecond,
@@ -359,10 +421,10 @@ function DevHome() {
   const handlePurchase = (newState: PlayerState) => setPlayerState(newState);
   const handlePrestige = (newState: PlayerState) => {
     setPlayerState(newState);
-    setActiveTab("lab");
+    setActiveTab(null);
   };
   const handleDailyReward = (coins: number, crystals: number) => {
-    setPlayerState((prev) => ({
+    setPlayerState(prev => ({
       ...prev,
       player: {
         ...prev.player,
@@ -373,32 +435,32 @@ function DevHome() {
   };
 
   const renderContent = () => {
-    switch (activeTab) {
-      case "lab":
-        return (
-          <div className="relative flex min-h-full flex-1 flex-col">
-            <MiningRoomBackground />
-            <div className="relative z-10 flex flex-col">
-              <LabTopBar
-                onOpenDaily={() => setDailyModalOpen(true)}
-                onOpenSettings={() => setSettingsModalOpen(true)}
-                showDailyBadge={dailyClaimable}
-              />
-              <div className="relative flex flex-col">
-                <div className="px-2 pt-2">
-                  <CryptoTipBanner seed={777} className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none" />
-                </div>
-                <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
+    if (activeTab === null) {
+      return (
+        <div className="relative flex min-h-full flex-1 flex-col">
+          <MiningRoomBackground />
+          <div className="relative z-10 flex flex-col">
+            <LabTopBar
+              onOpenDaily={() => setDailyModalOpen(true)}
+              onOpenSettings={() => setSettingsModalOpen(true)}
+              showDailyBadge={dailyClaimable}
+            />
+            <div className="relative flex flex-col">
+              <div className="px-2 pt-2">
+                <CryptoTipBanner seed={777} className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
+              <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
             </div>
           </div>
-        );
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "lab":
+        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><ItemShop initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
       case "upgrades":
-        return (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
-          </div>
-        );
+        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
       case "goals":
         return (
           <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pt-3">
@@ -419,11 +481,7 @@ function DevHome() {
           </div>
         );
       case "top":
-        return (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <LeaderboardPanel initData="dev" />
-          </div>
-        );
+        return <div className="flex min-h-0 flex-1 flex-col"><LeaderboardPanel initData="dev" /></div>;
       default:
         return null;
     }
@@ -431,16 +489,10 @@ function DevHome() {
 
   return (
     <MobileAppFrame>
-      <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
-        }`}
-      >
-        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div className={`min-h-0 flex-1 ${activeTab === "top" ? "overflow-y-auto" : "overflow-hidden"}`}>
-          {renderContent()}
-        </div>
-        <BottomDock active={activeTab} onChange={setActiveTab} />
+      <div className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}>
+        <GameHeader playerState={playerState} />
+        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
+        <BottomDock active={activeTab} onChange={handleTabChangeDev} />
         <DailyRewardModal
           open={dailyModalOpen}
           onClose={() => setDailyModalOpen(false)}
