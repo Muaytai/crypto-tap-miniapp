@@ -166,10 +166,9 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     : 0;
 
   return (
-    <div className="flex flex-col gap-4 p-3">
+    <div className="flex flex-col gap-4 p-3 overflow-y-auto max-h-[calc(100vh-140px)]">
       <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
-        💡 Закалённое стекло работает по тому же принципу, что и Капля Руперта: чем выше нагрузка,
-        тем ценнее награда после перезакалки.
+        💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
       </div>
 
       <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
@@ -194,7 +193,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           </p>
           {!status.can_prestige && (
             <p className="mt-1 text-sm text-zinc-400">
-              Заработай {status.prestige_threshold.toLocaleString("ru-RU")} осколков всего, чтобы открыть.
+              Заработай {status.prestige_threshold.toLocaleString("ru-RU")} кликов всего, чтобы открыть.
             </p>
           )}
 
@@ -214,7 +213,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           </p>
           {needed > 0 && (
             <p className="mt-1 text-xs text-zinc-500">
-              Осталось: {needed.toLocaleString("ru-RU")} осколков
+              Осталось: {needed.toLocaleString("ru-RU")} кликов
             </p>
           )}
         </div>
@@ -244,69 +243,8 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           disabled
           className="w-full rounded-2xl bg-zinc-800 py-4 text-lg font-bold text-zinc-500"
         >
-          🔒 Недостаточно осколков
+          🔒 Недостаточно кликов
         </button>
-      )}
-
-      <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/30 to-violet-950/20 p-4">
-        <h3 className="text-lg font-bold tracking-wide text-purple-200">НЕБЕСНЫЕ АПГРЕЙДЫ</h3>
-        <p className="mt-1 text-sm text-zinc-400">
-          Баланс: <span className="font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")}</span>
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {upgrades.map((upgrade) => {
-          const currentLevel = playerUpgrades.get(upgrade.id) || 0;
-          const isMax = currentLevel >= upgrade.max_level;
-          const price = upgrade.price_crystals * (currentLevel + 1);
-          const canAfford = status.crystals >= price;
-
-          return (
-            <div
-              key={upgrade.id}
-              className="rounded-2xl border border-purple-500/20 bg-white/5 p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold text-white">{upgrade.name}</p>
-                  <p className="text-sm text-zinc-400">{upgrade.description}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Уровень: {currentLevel} / {upgrade.max_level}
-                  </p>
-                </div>
-                <p className="text-sm font-semibold text-cyan-300">💎 {price.toLocaleString("ru-RU")}</p>
-              </div>
-
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                  style={{ width: `${(currentLevel / upgrade.max_level) * 100}%` }}
-                />
-              </div>
-
-              <button
-                onClick={() => handleBuyUpgrade(upgrade)}
-                disabled={isMax || !canAfford || buyingUpgradeId === upgrade.id}
-                className={`tap-target mt-3 w-full rounded-xl py-2 text-sm font-semibold transition ${
-                  isMax
-                    ? "bg-emerald-900/40 text-emerald-300"
-                    : canAfford
-                      ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white"
-                      : "bg-zinc-800 text-zinc-500"
-                }`}
-              >
-                {isMax ? "MAX уровень" : buyingUpgradeId === upgrade.id ? "Покупка..." : `Купить за 💎 ${price.toLocaleString("ru-RU")}`}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {upgrades.length === 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
-          Небесные апгрейды пока не настроены
-        </div>
       )}
 
       <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/30 p-3">
@@ -315,6 +253,156 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           💎 Алмазы и небесные апгрейды останутся с вами навсегда!
         </p>
       </div>
+
+      <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/30 to-violet-950/20 p-4">
+        <h3 className="text-lg font-bold tracking-wide text-purple-200">НЕБЕСНЫЕ АПГРЕЙДЫ</h3>
+        <p className="mt-1 text-sm text-zinc-400">
+          Баланс: <span className="font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")}</span>
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {upgrades.length > 0 ? (
+          Object.entries(
+            upgrades.reduce(
+              (acc, upgrade) => {
+                const type = upgrade.upgrade_type;
+                if (!acc[type]) acc[type] = [];
+                acc[type].push(upgrade);
+                return acc;
+              },
+              {} as Record<string, typeof upgrades>
+            )
+          ).map(([upgradeType, typeUpgrades]) => {
+            // Название раздела и описание по типу
+            const typeInfo: Record<
+              string,
+              { title: string; description: string; emoji: string }
+            > = {
+              global_income: {
+                title: "🌍 МНОЖИТЕЛЬ ДОХОДА",
+                description: "Увеличьте ваш доход от каждого тапа",
+                emoji: "💰",
+              },
+              tap_bonus: {
+                title: "👆 БОНУС К ТАПАМ",
+                description: "Каждый тап будет сильнее",
+                emoji: "⚡",
+              },
+              offline_boost: {
+                title: "⏰ ОФФЛАЙН БОНУСЫ",
+                description: "Больше дохода при офлайне",
+                emoji: "😴",
+              },
+              auto_tap: {
+                title: "⚙️ АВТОМАТИЗАЦИЯ",
+                description: "Получайте доход без участия",
+                emoji: "🤖",
+              },
+            };
+
+            const info = typeInfo[upgradeType] || {
+              title: "АПГРЕЙДЫ",
+              description: "Улучшения",
+              emoji: "✨",
+            };
+
+            return (
+              <div key={upgradeType}>
+                {/* Апгрейды этого типа */}
+                <div className="flex flex-col gap-2">
+                  {typeUpgrades.map((upgrade) => {
+                    const currentLevel = playerUpgrades.get(upgrade.id) || 0;
+                    const isMax = currentLevel >= upgrade.max_level;
+                    const price = upgrade.price_crystals * (currentLevel + 1);
+                    const canAfford = status.crystals >= price;
+
+                    // Выбираем иконку по типу апгрейда
+                    const getIcon = () => {
+                      switch (upgrade.upgrade_type) {
+                        case "tap_bonus":
+                          return "👆";
+                        case "offline_boost":
+                          return "⏰";
+                        case "auto_tap":
+                          return "⚙️";
+                        case "global_income":
+                        default:
+                          return "💎";
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={upgrade.id}
+                        className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/30 to-violet-950/20 p-3"
+                      >
+                        <div className="flex gap-3">
+                          {/* Иконка */}
+                          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-2xl">
+                            {getIcon()}
+                          </div>
+
+                          {/* Основная информация */}
+                          <div className="flex-1">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <p className="font-bold text-white">{upgrade.name}</p>
+                              <p className="text-xs font-semibold text-zinc-400">
+                                Уровень: {currentLevel}/{upgrade.max_level}
+                              </p>
+                            </div>
+                            <p className="mt-1 text-xs text-zinc-400">{upgrade.description}</p>
+                            <p className="mt-2 text-xs font-semibold text-cyan-300">
+                              💎 {price.toLocaleString("ru-RU")}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Прогресс бар */}
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                            style={{ width: `${(currentLevel / upgrade.max_level) * 100}%` }}
+                          />
+                        </div>
+
+                        {/* Кнопка */}
+                        <button
+                          onClick={() => handleBuyUpgrade(upgrade)}
+                          disabled={isMax || !canAfford || buyingUpgradeId === upgrade.id}
+                          className={`tap-target mt-3 w-full rounded-xl py-2 text-xs font-bold uppercase transition ${
+                            isMax
+                              ? "bg-emerald-900/40 text-emerald-300"
+                              : canAfford
+                                ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-purple-500/50"
+                                : "bg-zinc-800 text-zinc-500"
+                          }`}
+                        >
+                          {isMax
+                            ? "✓ MAX"
+                            : buyingUpgradeId === upgrade.id
+                              ? "..."
+                              : `Купить 💎 ${price.toLocaleString("ru-RU")}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
+            Небесные апгрейды пока не настроены
+          </div>
+        )}
+      </div>
+
+      {upgrades.length === 0 && (
+        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
+          Небесные апгрейды пока не настроены
+        </div>
+      )}
     </div>
   );
 }
