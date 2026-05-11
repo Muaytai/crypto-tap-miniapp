@@ -165,7 +165,7 @@ export function LeaderboardPanel({ initData }: Props) {
       <div className="min-h-0 flex-1 px-3 pb-2">
         <h1 className="mb-3 mt-1 text-center font-pixel text-xl text-amber-50 sm:text-2xl">Рейтинг</h1>
         <div className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-[#101626]/80 to-[#0b0f1a]/70 p-2 shadow-[0_18px_50px_-25px_rgba(0,0,0,0.85)]">
-          <div className="lb-tabs mb-3 flex shrink-0">
+          <div className="relative mb-3 flex shrink-0 rounded-[18px] bg-[rgba(10,16,32,0.75)] p-1 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
             {TABS.map((t) => {
               const on = metric === t.id;
               return (
@@ -173,8 +173,10 @@ export function LeaderboardPanel({ initData }: Props) {
                   key={t.id}
                   type="button"
                   onClick={() => setMetric(t.id)}
-                  className={`lb-tab tap-target font-pixel flex-1 px-2 py-2 text-center text-[10px] transition sm:text-[11px] ${
-                    on ? "lb-tab--active -mt-0.5 pb-3 text-white" : "text-amber-200/45 hover:text-amber-100/80"
+                  className={`tap-target relative flex-1 rounded-[14px] px-2 py-2 text-center font-pixel text-[10px] transition sm:text-[11px] ${
+                    on
+                      ? "-mt-0.5 pb-3 text-white shadow-[0_10px_22px_-16px_rgba(56,189,248,0.7),inset_0_2px_0_rgba(255,255,255,0.12)] [background:linear-gradient(to_bottom,#0ea5e9,#075985)] after:absolute after:bottom-[-10px] after:left-[10px] after:right-[10px] after:h-[14px] after:rounded-b-full after:[background:linear-gradient(to_bottom,#075985,transparent)] after:[filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.35))]"
+                      : "text-amber-200/45 hover:text-amber-100/80"
                   }`}
                 >
                   {t.icon ? `${t.icon} ` : ""}
