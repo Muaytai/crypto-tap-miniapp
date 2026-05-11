@@ -491,17 +491,19 @@ class AchievementsView(APIView):
 
     def get(self, request):
         principal: TelegramPrincipal = request.user
-        player = principal.player
+        return Response(achievements_response_data(principal.player))
 
-        # Проверяем новые достижения
-        new_achievements = self.check_and_award_achievements(player)
 
-        # Собираем все достижения с прогрессом
-        earned_ids = set(pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player))
-
-        all_achievements = []
-        for ach in Achievement.objects.filter(is_active=True):
-            all_achievements.append({
+def achievements_response_data(player: Player) -> dict:
+    """Тело ответа GET /api/achievements/ (и dev-лист без initData)."""
+    new_achievements = AchievementsView.check_and_award_achievements(player)
+    earned_ids = set(
+        pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player)
+    )
+    all_achievements = []
+    for ach in Achievement.objects.filter(is_active=True):
+        all_achievements.append(
+            {
                 "id": ach.id,
                 "name": ach.name,
                 "description": ach.description,
@@ -510,12 +512,9 @@ class AchievementsView(APIView):
                 "reward_crystals": ach.reward_crystals,
                 "reward_coins": ach.reward_coins,
                 "is_earned": ach.id in earned_ids,
-            })
-
-        return Response({
-            "achievements": all_achievements,
-            "new_achievements": new_achievements,
-        })
+            }
+        )
+    return {"achievements": all_achievements, "new_achievements": new_achievements}
 
 
 # ========== ЕЖЕДНЕВНЫЕ НАГРАДЫ ==========
@@ -941,17 +940,36 @@ class TestDailyRewardView(APIView):
 
 
 class TestListAchievementsView(APIView):
+    """Браузерный dev (initData=dev): полный список достижений для игрока без Telegram-подписи."""
+
     authentication_classes = []
     permission_classes = []
 
     def get(self, request):
-        achievements = []
-        for ach in Achievement.objects.filter(is_active=True):
-            achievements.append({
-                "id": ach.id,
-                "name": ach.name,
-                "trigger_type": ach.trigger_type,
-                "trigger_value": ach.trigger_value,
-                "reward_crystals": ach.reward_crystals,
-            })
-        return Response({"achievements": achievements})
+        try:
+            telegram_id = int(request.GET.get("telegram_id", 777))
+        except ValueError:
+            return Response(
+                {"achievements": [], "new_achievements": [], "error": "bad_telegram_id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            player = Player.objects.get(telegram_id=telegram_id)
+        except Player.DoesNotExist:
+            if telegram_id != 777:
+                return Response(
+                    {"achievements": [], "new_achievements": [], "error": "player_not_found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            player = Player.objects.create(
+                telegram_id=777,
+                username="dev",
+                first_name="Разработчик",
+                coins=100_000,
+                total_taps=1_000,
+                crystals=10,
+                total_earned_all_time=1_000_000,
+                prestige_count=1,
+            )
+            player.recalculate_income_per_second()
+        return Response(achievements_response_data(player))

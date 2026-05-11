@@ -324,6 +324,9 @@ export async function fetchAchievements(initData: string): Promise<{
   }>;
   new_achievements: Array<any>;
 }> {
+  if (isLocalDailyMock(initData)) {
+    return fetchPublicJson("/api/test-list-achievements/?telegram_id=777") as Promise<any>;
+  }
   return apiFetch("/api/achievements/", { initData }) as Promise<any>;
 }
 
