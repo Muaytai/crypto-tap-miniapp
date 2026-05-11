@@ -260,3 +260,200 @@ body {
 .ach-bubble--2 {
   animation-delay: 0.45s;
 }
+@font-face {
+  font-family: 'Pixel';
+  src: url('/fonts/pixel.ttf') format('truetype');
+}
+
+.font-pixel {
+  font-family: 'Pixel', monospace;
+}
+
+
+
+/* ========== МАГАЗИН (стили для ItemShop) ========== */
+
+.shop-container {
+  background-color: #0f0c0a;
+  min-height: 100%;
+}
+
+.shop-header {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+  border-bottom: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.shop-title {
+  font-family: 'Pixel', monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+/* Кнопки кратности */
+.multiplier-bar {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.multiplier-label {
+  font-family: 'Pixel', monospace;
+  font-size: 0.7rem;
+  color: #b45309;
+}
+
+.multiplier-btn {
+  font-family: 'Pixel', monospace;
+  background: transparent;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.multiplier-btn:hover {
+  transform: scale(1.02);
+}
+
+/* Карточка предмета */
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.shop-item:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.shop-item-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 2;
+}
+
+/* Иконка */
+.item-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: rgba(20, 20, 30, 0.6);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0.5rem;
+}
+
+.item-emoji {
+  font-size: 1.5rem;
+}
+
+.item-tag {
+  font-family: 'Pixel', monospace;
+  font-size: 0.55rem;
+  color: #f59e0b;
+  opacity: 0.7;
+}
+
+/* Информация */
+.item-name {
+  font-family: 'Pixel', monospace;
+  font-size: 1rem;
+  color: #fef3c7;
+  margin: 0;
+}
+
+.item-income {
+  font-family: 'Pixel', monospace;
+  font-size: 0.75rem;
+  color: #34d399;
+  margin: 0.25rem 0 0;
+}
+
+/* Количество предметов */
+.item-quantity {
+  min-width: 3rem;
+  text-align: center;
+}
+
+.quantity-number {
+  font-family: 'Pixel', monospace;
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+/* Правая часть */
+.shop-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-width: 6rem;
+}
+
+.item-price {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Pixel', monospace;
+  font-size: 0.75rem;
+  color: #f59e0b;
+}
+
+.price-icon {
+  font-size: 0.8rem;
+}
+
+.price-value {
+  font-weight: bold;
+}
+
+/* Кнопка покупки */
+.buy-btn {
+  font-family: 'Pixel', monospace;
+  font-size: 0.7rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.buy-btn.can-buy {
+  background: linear-gradient(to bottom, #f59e0b, #b45309);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.buy-btn.can-buy:hover {
+  transform: scale(1.02);
+  background: linear-gradient(to bottom, #fbbf24, #d97706);
+}
+
+.buy-btn.can-buy:active {
+  transform: scale(0.98);
+}
+
+.buy-btn.cannot-buy {
+  background: #374151;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.error-message {
+  text-align: center;
+}
