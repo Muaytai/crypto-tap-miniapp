@@ -6,6 +6,7 @@ import {
   getPrestigeStatus,
   fetchCelestialUpgrades,
   buyCelestialUpgrade,
+  isLocalDevMock,
   type PlayerState,
 } from "@/lib/api";
 
@@ -32,6 +33,7 @@ type PlayerCelestial = {
 };
 
 export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: Props) {
+  const isDev = isLocalDevMock(initData);
   const [loading, setLoading] = useState(false);
   const [buyingUpgradeId, setBuyingUpgradeId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     const loadStatusAndUpgrades = async () => {
       try {
         const [data, upgradesList] = await Promise.all([
-          getPrestigeStatus(initData),
+          getPrestigeStatus(initData, isDev ? playerState.player : undefined),
           fetchCelestialUpgrades(initData),
         ]);
         setStatus(data);
@@ -71,7 +73,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
       }
     };
     loadStatusAndUpgrades();
-  }, [initData, playerState.player.prestige_count, playerState.player.telegram_id]);
+  }, [initData, isDev, playerState.player.prestige_count, playerState.player.telegram_id]);
 
   const savePlayerUpgrades = (upgradeId: number, level: number) => {
     const newMap = new Map(playerUpgrades);
@@ -86,7 +88,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     setError(null);
     setSuccess(null);
     try {
-      const result = await performPrestige(initData);
+      const result = await performPrestige(initData, isDev ? playerState.player : undefined);
       if (result.success) {
         // Обновляем состояние игрока (сброс)
         const updatedState = {
@@ -131,7 +133,14 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     setError(null);
     setSuccess(null);
     try {
-      const result = await buyCelestialUpgrade(initData, upgrade.id);
+      const price = upgrade.price_crystals * (currentLevel + 1);
+      const result = isDev
+        ? await buyCelestialUpgrade(initData, upgrade.id, {
+            upgradeName: upgrade.name,
+            nextLevel: currentLevel + 1,
+            crystalsAfter: playerState.player.crystals - price,
+          })
+        : await buyCelestialUpgrade(initData, upgrade.id);
       if (result.success) {
         savePlayerUpgrades(upgrade.id, result.new_level);
         onUpdate({

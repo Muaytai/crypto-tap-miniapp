@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchCelestialUpgrades, buyCelestialUpgrade, type PlayerState } from "@/lib/api";
+import {
+  fetchCelestialUpgrades,
+  buyCelestialUpgrade,
+  isLocalDevMock,
+  type PlayerState,
+} from "@/lib/api";
 
 type Props = {
   initData: string;
@@ -25,6 +30,7 @@ type PlayerCelestial = {
 };
 
 export function CelestialPanel({ initData, playerState, onUpdate }: Props) {
+  const isDev = isLocalDevMock(initData);
   const [upgrades, setUpgrades] = useState<CelestialUpgrade[]>([]);
   const [playerUpgrades, setPlayerUpgrades] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState<number | null>(null);
@@ -77,7 +83,14 @@ export function CelestialPanel({ initData, playerState, onUpdate }: Props) {
     setLoading(upgrade.id);
     setError(null);
     try {
-      const result = await buyCelestialUpgrade(initData, upgrade.id);
+      const price = upgrade.price_crystals * (currentLevel + 1);
+      const result = isDev
+        ? await buyCelestialUpgrade(initData, upgrade.id, {
+            upgradeName: upgrade.name,
+            nextLevel: currentLevel + 1,
+            crystalsAfter: playerState.player.crystals - price,
+          })
+        : await buyCelestialUpgrade(initData, upgrade.id);
       if (result.success) {
         savePlayerUpgrades(upgrade.id, result.new_level);
         // Обновляем баланс кристаллов
