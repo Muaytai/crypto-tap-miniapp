@@ -491,17 +491,19 @@ class AchievementsView(APIView):
 
     def get(self, request):
         principal: TelegramPrincipal = request.user
-        player = principal.player
+        return Response(achievements_response_data(principal.player))
 
-        # Проверяем новые достижения
-        new_achievements = self.check_and_award_achievements(player)
 
-        # Собираем все достижения с прогрессом
-        earned_ids = set(pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player))
-
-        all_achievements = []
-        for ach in Achievement.objects.filter(is_active=True):
-            all_achievements.append({
+def achievements_response_data(player: Player) -> dict:
+    """Тело ответа GET /api/achievements/ (и dev-лист без initData)."""
+    new_achievements = AchievementsView.check_and_award_achievements(player)
+    earned_ids = set(
+        pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player)
+    )
+    all_achievements = []
+    for ach in Achievement.objects.filter(is_active=True):
+        all_achievements.append(
+            {
                 "id": ach.id,
                 "name": ach.name,
                 "description": ach.description,
@@ -510,27 +512,71 @@ class AchievementsView(APIView):
                 "reward_crystals": ach.reward_crystals,
                 "reward_coins": ach.reward_coins,
                 "is_earned": ach.id in earned_ids,
-            })
-
-        return Response({
-            "achievements": all_achievements,
-            "new_achievements": new_achievements,
-        })
+            }
+        )
+    return {"achievements": all_achievements, "new_achievements": new_achievements}
 
 
 # ========== ЕЖЕДНЕВНЫЕ НАГРАДЫ ==========
 
-def _daily_config_for_day(day_number: int):
+def _daily_config_for_streak(streak: int):
+    """Награда за день серии: цикл 1–7 (как в «Капле Руперта»), streak 8 → снова день 1."""
+    if streak <= 0:
+        slot = 1
+    else:
+        slot = ((streak - 1) % 7) + 1
     try:
-        return DailyRewardConfig.objects.get(day_number=day_number, is_active=True)
+        return DailyRewardConfig.objects.get(day_number=slot, is_active=True)
     except DailyRewardConfig.DoesNotExist:
         return DailyRewardConfig.objects.filter(is_active=True).order_by("day_number").first()
 
 
+def _daily_reward_day_configs():
+    """Статичные награды по слотам 1..7 для сетки и API."""
+    rows = []
+    for d in range(1, 8):
+        cfg = DailyRewardConfig.objects.filter(day_number=d, is_active=True).first()
+        rows.append(
+            {
+                "day": d,
+                "reward_coins": cfg.reward_coins if cfg else 0,
+                "reward_crystals": cfg.reward_crystals if cfg else 0,
+            }
+        )
+    return rows
+
+
+def _daily_day_schedule(daily: PlayerDailyReward, can_claim: bool, next_streak: int):
+    """Состояния ячеек 1–7: claimed / claimable / locked."""
+    base = _daily_reward_day_configs()
+    if can_claim:
+        claim_slot = ((max(next_streak, 1) - 1) % 7) + 1
+        out = []
+        for row in base:
+            d = row["day"]
+            if d < claim_slot:
+                st = "claimed"
+            elif d == claim_slot:
+                st = "claimable"
+            else:
+                st = "locked"
+            out.append({**row, "status": st})
+        return out
+
+    last_slot = ((max(daily.current_streak, 1) - 1) % 7) + 1
+    out = []
+    for row in base:
+        d = row["day"]
+        if d <= last_slot:
+            st = "claimed"
+        else:
+            st = "locked"
+        out.append({**row, "status": st})
+    return out
+
+
 def _daily_reward_status(daily: PlayerDailyReward, today):
     """Только чтение: можно ли забрать сегодня, номер следующего дня награды, слот 1–7 для сетки."""
-    from datetime import date as date_cls
-
     last = daily.last_claim_date
     if last == today:
         can_claim = False
@@ -554,7 +600,7 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
         day_slot = 1
 
     reward_coins, reward_crystals = 0, 0
-    cfg = _daily_config_for_day(next_streak) if can_claim else _daily_config_for_day(daily.current_streak)
+    cfg = _daily_config_for_streak(next_streak) if can_claim else _daily_config_for_streak(daily.current_streak)
     if cfg:
         reward_coins, reward_crystals = cfg.reward_coins, cfg.reward_crystals
 
@@ -563,6 +609,8 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
 
     slot_for_bonus = day_slot if can_claim else ((max(daily.current_streak, 1) - 1) % 7) + 1
     days_to_weekly_bonus = max(0, 7 - slot_for_bonus)
+
+    day_schedule = _daily_day_schedule(daily, can_claim, next_streak)
 
     return {
         "can_claim": can_claim,
@@ -576,6 +624,7 @@ def _daily_reward_status(daily: PlayerDailyReward, today):
         "reward_crystals": reward_crystals,
         "days_to_weekly_bonus": days_to_weekly_bonus,
         "weekly_bonus_crystals": weekly_bonus_crystals,
+        "day_schedule": day_schedule,
     }
 
 
@@ -637,7 +686,7 @@ class DailyRewardView(APIView):
         else:
             next_streak = daily.current_streak + 1
 
-        reward_config = _daily_config_for_day(next_streak)
+        reward_config = _daily_config_for_streak(next_streak)
         if not reward_config:
             return Response(
                 {"detail": "Награда не настроена"},
@@ -891,17 +940,36 @@ class TestDailyRewardView(APIView):
 
 
 class TestListAchievementsView(APIView):
+    """Браузерный dev (initData=dev): полный список достижений для игрока без Telegram-подписи."""
+
     authentication_classes = []
     permission_classes = []
 
     def get(self, request):
-        achievements = []
-        for ach in Achievement.objects.filter(is_active=True):
-            achievements.append({
-                "id": ach.id,
-                "name": ach.name,
-                "trigger_type": ach.trigger_type,
-                "trigger_value": ach.trigger_value,
-                "reward_crystals": ach.reward_crystals,
-            })
-        return Response({"achievements": achievements})
+        try:
+            telegram_id = int(request.GET.get("telegram_id", 777))
+        except ValueError:
+            return Response(
+                {"achievements": [], "new_achievements": [], "error": "bad_telegram_id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            player = Player.objects.get(telegram_id=telegram_id)
+        except Player.DoesNotExist:
+            if telegram_id != 777:
+                return Response(
+                    {"achievements": [], "new_achievements": [], "error": "player_not_found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            player = Player.objects.create(
+                telegram_id=777,
+                username="dev",
+                first_name="Разработчик",
+                coins=100_000,
+                total_taps=1_000,
+                crystals=10,
+                total_earned_all_time=1_000_000,
+                prestige_count=1,
+            )
+            player.recalculate_income_per_second()
+        return Response(achievements_response_data(player))

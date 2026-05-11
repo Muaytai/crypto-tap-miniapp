@@ -285,9 +285,9 @@ export default function Home() {
         );
       case "goals":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pt-3">
-            <h1 className="text-center font-pixel text-lg text-amber-100">Цели</h1>
-            <p className="text-center font-pixel text-[10px] text-amber-200/50">Награды и достижения</p>
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#0f141b] px-3 pb-3 pt-3">
+            <h1 className="text-center font-pixel text-2xl text-[#f6cd2d]">Цели</h1>
+            <p className="text-center font-pixel text-[10px] text-[#9da9b8]">Награды и достижения</p>
             <DailyReward initData={initData} onUpdate={handleDailyReward} />
             <AchievementsList initData={initData} playerState={playerState} onReward={handleDailyReward} />
           </div>
@@ -319,8 +319,14 @@ export default function Home() {
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
       >
-        <GameHeader playerState={playerState} />
-        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
+        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
+        <div
+          className={`h-full min-h-0 flex-1 ${
+            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
+          }`}
+        >
+          {renderContent()}
+        </div>
         <BottomDock active={activeTab} onChange={handleTabChange} />
         {playerState && (
           <DailyRewardModal
@@ -489,9 +495,19 @@ function DevHome() {
 
   return (
     <MobileAppFrame>
-      <div className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}>
-        <GameHeader playerState={playerState} />
-        <div className="min-h-0 flex-1 overflow-hidden">{renderContent()}</div>
+      <div
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+        }`}
+      >
+        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
+        <div
+          className={`min-h-0 flex-1 ${
+            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
+          }`}
+        >
+          {renderContent()}
+        </div>
         <BottomDock active={activeTab} onChange={handleTabChangeDev} />
         <DailyRewardModal
           open={dailyModalOpen}

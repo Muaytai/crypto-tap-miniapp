@@ -30,7 +30,7 @@ class Player(models.Model):
     prestige_count = models.PositiveIntegerField(default=0)  # сколько раз закалялся
 
     # Оффлайн прогресс
-    last_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(default=timezone.now)
     max_offline_minutes = models.PositiveIntegerField(default=180)  # 3 часа по умолчанию
 
     # Кэш пассивного дохода (чтобы не пересчитывать каждый раз)
