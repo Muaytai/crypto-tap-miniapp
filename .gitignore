@@ -1,22 +1,17 @@
 .venv/
 venv/
 backend/venv/
-
 .env
 .env.local
-*.env
-env*
-
 __pycache__/
 *.py[cod]
-
 backend/db.sqlite3
-
 *.log
 .DS_Store
 
 frontend/.next/
 frontend/node_modules/
-
 .cursorignore
-.idea/
+.env.example
+env*
+*.env
