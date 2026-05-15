@@ -385,6 +385,7 @@ class CelestialUpgradeListView(APIView):
             "id": u.id,
             "name": u.name,
             "description": u.description,
+            "icon_name": u.icon_name,
             "upgrade_type": u.upgrade_type,
             "value": u.value,
             "price_crystals": u.price_crystals,

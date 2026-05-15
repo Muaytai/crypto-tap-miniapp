@@ -294,7 +294,7 @@ export default function Home() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+          <div className="pb-20 [-webkit-overflow-scrolling:touch]">
             <PrestigePanel
               initData={initData}
               playerState={playerState}
@@ -317,12 +317,20 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+          activeTab === null ||
+          activeTab === "top" ||
+          activeTab === "prestige"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
+        }`}
       >
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
         <div
           className={`h-full min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
+            activeTab === "top" || activeTab === "goals" || activeTab === "prestige"
+              ? "overflow-y-auto"
+              : "overflow-hidden"
           }`}
         >
           {renderContent()}
@@ -477,7 +485,7 @@ function DevHome() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+          <div className="pb-20 [-webkit-overflow-scrolling:touch]">
             <PrestigePanel
               initData="dev"
               playerState={playerState}
@@ -497,13 +505,17 @@ function DevHome() {
     <MobileAppFrame>
       <div
         className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+          activeTab === "lab" || activeTab === "top" || activeTab === "prestige"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
         }`}
       >
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
         <div
-          className={`min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
+          className={`h-full min-h-0 flex-1 ${
+            activeTab === "top" || activeTab === "goals" || activeTab === "prestige"
+              ? "overflow-y-auto"
+              : "overflow-hidden"
           }`}
         >
           {renderContent()}
