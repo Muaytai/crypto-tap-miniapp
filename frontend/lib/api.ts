@@ -387,21 +387,21 @@ export async function fetchCelestialUpgrades(initData: string): Promise<
     return [
       {
         id: 9001,
-        name: "Dev: множитель дохода",
-        description: "Локальный превью без бэкенда",
-        upgrade_type: "global_income",
-        value: 1.05,
+        name: "Крепкий старт",
+        description: "Начиная каждый цикл с 5,000 осколков",
+        upgrade_type: "start_boost",
+        value: 5000,
         price_crystals: 3,
-        max_level: 5,
+        max_level: 1,
       },
       {
         id: 9002,
-        name: "Dev: бонус к тапам",
-        description: "Локальный превью без бэкенда",
+        name: "Память мышц",
+        description: "Стартовый апгрейд «Крепкие пальцы» (+1 к клику)",
         upgrade_type: "tap_bonus",
-        value: 1.1,
+        value: 1,
         price_crystals: 5,
-        max_level: 5,
+        max_level: 1,
       },
     ];
   }
