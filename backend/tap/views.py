@@ -513,12 +513,13 @@ def achievements_response_data(player: Player) -> dict:
         pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player)
     )
     all_achievements = []
-    for ach in Achievement.objects.filter(is_active=True):
+    for ach in Achievement.objects.filter(is_active=True).order_by("sort_order", "id"):
         all_achievements.append(
             {
                 "id": ach.id,
                 "name": ach.name,
                 "description": ach.description,
+                "icon_name": ach.icon_name or "",
                 "trigger_type": ach.trigger_type,
                 "trigger_value": ach.trigger_value,
                 "reward_crystals": ach.reward_crystals,

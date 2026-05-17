@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAchievements, type PlayerState } from "@/lib/api";
 import { AchievementIcon } from "@/components/AchievementIcon";
+import { GoalTierBadge } from "@/components/GoalTierBadge";
+import { GoalRewardChips } from "@/components/GoalRewardChips";
+import {
+  getGoalTier,
+  tierCardClass,
+  tierTitleClass,
+  type GoalTier,
+} from "@/lib/goalTiers";
 
 type Props = {
   initData: string;
@@ -14,6 +22,7 @@ type Achievement = {
   id: number;
   name: string;
   description: string;
+  icon_name?: string;
   trigger_type: string;
   trigger_value: number;
   reward_crystals: number;
@@ -35,13 +44,11 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         setAchievements(data.achievements);
         if (data.new_achievements?.length > 0) {
           setNewAchievements(data.new_achievements);
-          // Уведомляем о наградах
           for (const ach of data.new_achievements) {
             if (ach.reward_coins > 0 || ach.reward_crystals > 0) {
               onReward?.(ach.reward_coins, ach.reward_crystals);
             }
           }
-          // Скрываем уведомления через 5 секунд
           setTimeout(() => setNewAchievements([]), 5000);
         }
       } catch (err) {
@@ -88,6 +95,34 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
   const earnedCount = achievements.filter((a) => a.is_earned).length;
   const progress = achievements.length > 0 ? (earnedCount / achievements.length) * 100 : 0;
 
+  const spotlight = useMemo(() => {
+    let best: { ach: Achievement; pct: number; tier: GoalTier } | null = null;
+    for (const ach of achievements) {
+      if (ach.is_earned) continue;
+      const tier = getGoalTier(ach);
+      if (tier < 4) continue;
+      const current = statValues[ach.trigger_type as keyof typeof statValues] ?? 0;
+      const pct =
+        ach.trigger_value > 0 ? Math.min(100, (current / ach.trigger_value) * 100) : 0;
+      if (
+        !best ||
+        tier > best.tier ||
+        (tier === best.tier && pct > best.pct)
+      ) {
+        best = { ach, pct, tier };
+      }
+    }
+    return best;
+  }, [achievements, statValues]);
+
+  const progressBarClass = (tier: GoalTier, earned: boolean) => {
+    if (earned) return "bg-[#f6cd2d]";
+    if (tier >= 5) return "bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300";
+    if (tier >= 4) return "bg-gradient-to-r from-violet-500 to-fuchsia-400";
+    if (tier >= 3) return "bg-gradient-to-r from-amber-500 to-orange-400";
+    return "bg-gradient-to-r from-emerald-500 to-cyan-500";
+  };
+
   if (loading) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
@@ -98,10 +133,9 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      {/* Уведомления о новых достижениях */}
       {newAchievements.length > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 p-3 text-center shadow-xl">
-          <p className="text-sm font-bold text-white">🏆 Новое достижение! 🏆</p>
+        <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-700/95 to-orange-800/95 p-3 text-center shadow-xl backdrop-blur-sm">
+          <p className="text-sm font-bold text-white">₿ Новая цель выполнена!</p>
           {newAchievements.map((ach, idx) => (
             <p key={idx} className="text-xs text-white/90">
               {ach.name} +{ach.reward_crystals}💎 +{ach.reward_coins}💰
@@ -110,9 +144,9 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         </div>
       )}
 
-      <div className="rounded-2xl border border-[#2e3a43] bg-[#141920] p-3">
+      <div className="rounded-2xl border border-cyan-500/20 bg-[#141920]/90 p-3 shadow-[0_0_24px_rgba(14,116,144,0.12)] backdrop-blur-md">
         <div className="mb-2 flex items-center justify-between">
-          <p className="font-pixel text-xs uppercase tracking-wide text-[#a8b5c2]">Достижения</p>
+          <p className="font-pixel text-xs uppercase tracking-wide text-cyan-200/80">Прогресс целей</p>
           <p className="font-pixel text-sm text-[#f6cd2d]">
             {earnedCount}/{achievements.length}
           </p>
@@ -121,6 +155,46 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
           <div className="h-full bg-[#f6cd2d] transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
+
+      {spotlight ? (
+        <div className="rounded-xl border border-orange-400/35 bg-gradient-to-br from-orange-950/40 via-[#141920]/95 to-violet-950/30 p-3 shadow-[0_0_24px_rgba(251,146,60,0.12)] ring-1 ring-amber-400/20">
+          <p className="mb-2 font-pixel text-[9px] uppercase tracking-widest text-orange-300/90">
+            Следующая большая цель
+          </p>
+          <div className="flex gap-3">
+            <AchievementIcon
+              achievement={spotlight.ach}
+              progressPct={spotlight.pct}
+              tier={spotlight.tier}
+            />
+            <div className="min-w-0 flex-1">
+              <GoalTierBadge tier={spotlight.tier} className="mb-1.5" />
+              <h4 className={tierTitleClass(spotlight.tier)}>{spotlight.ach.name}</h4>
+              <p className="mt-1 font-pixel text-[10px] text-cyan-200/70">
+                {getTriggerText(spotlight.ach.trigger_type, spotlight.ach.trigger_value)}
+              </p>
+              <div className="mt-3 space-y-1.5">
+                <div className="h-1.5 overflow-hidden rounded-full bg-black/35">
+                  <div
+                    className={`h-full transition-all ${progressBarClass(spotlight.tier, false)}`}
+                    style={{ width: `${spotlight.pct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-pixel text-[9px] text-amber-200/60">
+                    {Math.round(spotlight.pct)}% · держи курс
+                  </p>
+                  <GoalRewardChips
+                    rewardCoins={spotlight.ach.reward_coins}
+                    rewardCrystals={spotlight.ach.reward_crystals}
+                    compact
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2.5">
         {achievements.length === 0 ? (
@@ -152,23 +226,36 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
           achievements.map((ach) => {
             const current = getCurrentValue(ach);
             const pct = ach.trigger_value > 0 ? Math.min(100, (current / ach.trigger_value) * 100) : 0;
+            const tier = getGoalTier(ach);
             return (
-              <div
-                key={ach.id}
-                className={`rounded-xl border p-2.5 transition-all ${
-                  ach.is_earned
-                    ? "border-[#f6cd2d] bg-[#1a1b14] shadow-[0_0_0_1px_rgba(246,205,45,0.25),0_0_16px_rgba(246,205,45,0.12)]"
-                    : "border-[#2b3945] bg-[#121922]/90 opacity-75"
-                }`}
-              >
-                <div className="mb-1 flex items-start gap-2.5">
-                  <AchievementIcon achievement={ach} progressPct={pct} />
+              <div key={ach.id} className={tierCardClass(tier, ach.is_earned)}>
+                {tier === 5 && !ach.is_earned ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(251,146,60,0.14),transparent_60%)]"
+                    aria-hidden
+                  />
+                ) : null}
+                {tier === 4 && !ach.is_earned ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_left,rgba(139,92,246,0.1),transparent_55%)]"
+                    aria-hidden
+                  />
+                ) : null}
+
+                <div className="relative flex gap-3">
+                  <AchievementIcon achievement={ach} progressPct={pct} tier={tier} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-pixel text-[16px] leading-none text-[#eef2f6]">{ach.name}</h4>
+                      <div className="min-w-0">
+                        <GoalTierBadge tier={tier} className="mb-1" />
+                        <h4 className={tierTitleClass(tier)}>{ach.name}</h4>
+                      </div>
                       {ach.is_earned ? (
-                        <span className="shrink-0 rounded border border-[#f6cd2d]/70 bg-[#f6cd2d]/15 px-1.5 py-0.5 font-pixel text-[9px] uppercase tracking-wide text-[#f6cd2d]">
-                          выполнено
+                        <span
+                          className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md border border-[#f6cd2d]/70 bg-[#f6cd2d]/15 font-pixel text-[10px] text-[#f6cd2d]"
+                          title="Выполнено"
+                        >
+                          ✓
                         </span>
                       ) : null}
                     </div>
@@ -178,30 +265,33 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
                     {ach.description ? (
                       <p
                         className={`mt-1.5 font-pixel text-[10px] leading-relaxed ${
-                          ach.is_earned ? "text-[#e8bf2f]" : "text-[#7f8d9d]"
+                          ach.is_earned ? "text-amber-200/90" : tier >= 4 ? "text-slate-300" : "text-slate-400"
                         }`}
                       >
                         {ach.description}
                       </p>
                     ) : null}
+                    <div className="mt-2.5 space-y-1.5">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[#2a333d]">
+                        <div
+                          className={`h-full transition-all ${progressBarClass(tier, ach.is_earned)}`}
+                          style={{ width: `${ach.is_earned ? 100 : pct}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-pixel text-[9px] tabular-nums text-[#9aa7b5]">
+                          {Math.min(current, ach.trigger_value).toLocaleString("ru-RU")}
+                          <span className="text-zinc-600"> / </span>
+                          {ach.trigger_value.toLocaleString("ru-RU")}
+                        </p>
+                        <GoalRewardChips
+                          rewardCoins={ach.reward_coins}
+                          rewardCrystals={ach.reward_crystals}
+                          compact
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-1.5">
-                  <div className="h-1.5 overflow-hidden rounded bg-[#2a333d]">
-                    <div
-                      className={`h-full transition-all ${ach.is_earned ? "bg-[#f6cd2d]" : "bg-[#2fb5ef]"}`}
-                      style={{ width: `${ach.is_earned ? 100 : pct}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 font-pixel text-[10px] text-[#9aa7b5]">
-                    {Math.min(current, ach.trigger_value).toLocaleString("ru-RU")} /{" "}
-                    {ach.trigger_value.toLocaleString("ru-RU")}
-                  </p>
-                </div>
-                <div className="mt-1.5 font-pixel text-[10px] text-[#9aa7b5]">
-                  Награда:
-                  {ach.reward_coins > 0 ? ` +${ach.reward_coins.toLocaleString("ru-RU")} монет` : ""}
-                  {ach.reward_crystals > 0 ? ` +${ach.reward_crystals} крист.` : ""}
                 </div>
               </div>
             );
