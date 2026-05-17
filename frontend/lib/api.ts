@@ -141,6 +141,11 @@ export type PlayerState = {
   income_per_second: number;
 };
 
+/** Локальная игра без Telegram (DevHome / test_init_data): не ходим на защищённые DRF-эндпоинты. */
+export function isLocalDevMock(initData: string): boolean {
+  return initData === "dev" || initData === "test_init_data";
+}
+
 export async function fetchFullState(initData: string): Promise<PlayerState> {
   return apiFetch("/api/state/", { initData }) as Promise<PlayerState>;
 }
@@ -184,26 +189,68 @@ export async function buyUpgrade(
 }
 
 export async function performPrestige(
-  initData: string
+  initData: string,
+  devPlayer?: Pick<PlayerState["player"], "total_earned_all_time" | "prestige_count" | "crystals">,
 ): Promise<{
   success: boolean;
   prestige_count: number;
   crystals_earned: number;
   total_crystals: number;
 }> {
+  if (isLocalDevMock(initData)) {
+    const p = devPlayer;
+    if (!p) {
+      throw new Error("Local dev prestige requires player snapshot");
+    }
+    const PRESTIGE_THRESHOLD = 500_000_000_000;
+    if (p.total_earned_all_time < PRESTIGE_THRESHOLD) {
+      return {
+        success: false,
+        prestige_count: p.prestige_count,
+        crystals_earned: 0,
+        total_crystals: p.crystals,
+      };
+    }
+    const excess = p.total_earned_all_time - PRESTIGE_THRESHOLD;
+    const crystalsEarned = Math.max(1, Math.floor(excess / 100_000_000_000));
+    return {
+      success: true,
+      prestige_count: p.prestige_count + 1,
+      crystals_earned: crystalsEarned,
+      total_crystals: p.crystals + crystalsEarned,
+    };
+  }
   return apiFetch("/api/prestige/", {
     method: "POST",
     initData,
   }) as Promise<any>;
 }
 
-export async function getPrestigeStatus(initData: string): Promise<{
+export async function getPrestigeStatus(
+  initData: string,
+  devPlayer?: Pick<PlayerState["player"], "total_earned_all_time" | "prestige_count" | "crystals">,
+): Promise<{
   can_prestige: boolean;
   total_earned_all_time: number;
   prestige_threshold: number;
   current_prestige_count: number;
   crystals: number;
 }> {
+  if (isLocalDevMock(initData)) {
+    const PRESTIGE_THRESHOLD = 500_000_000_000;
+    const p = devPlayer ?? {
+      total_earned_all_time: 0,
+      prestige_count: 0,
+      crystals: 0,
+    };
+    return {
+      can_prestige: p.total_earned_all_time >= PRESTIGE_THRESHOLD,
+      total_earned_all_time: p.total_earned_all_time,
+      prestige_threshold: PRESTIGE_THRESHOLD,
+      current_prestige_count: p.prestige_count,
+      crystals: p.crystals,
+    };
+  }
   return apiFetch("/api/prestige/", { initData }) as Promise<any>;
 }
 
@@ -232,10 +279,6 @@ export type DailyRewardStatus = {
   day_schedule?: DailyRewardDaySlot[];
   message: string;
 };
-
-function isLocalDailyMock(initData: string): boolean {
-  return initData === "dev" || initData === "test_init_data";
-}
 
 /** Базовые награды по дням (совпадают с seed_daily_rewards); без статуса. */
 export const DAILY_REWARD_TEMPLATE: Omit<DailyRewardDaySlot, "status">[] = [
@@ -272,7 +315,6 @@ export function resolveDailyDaySchedule(status: DailyRewardStatus): DailyRewardD
     status: row.day <= lastSlot ? ("claimed" as const) : ("locked" as const),
   }));
 }
-
 function buildMockDailyStatus(claimedToday = false): DailyRewardStatus {
   const daySlot = 1;
   const day_schedule: DailyRewardDaySlot[] = DAILY_REWARD_TEMPLATE.map((row) => ({
@@ -297,7 +339,7 @@ function buildMockDailyStatus(claimedToday = false): DailyRewardStatus {
 }
 
 export async function fetchDailyRewardStatus(initData: string): Promise<DailyRewardStatus> {
-  if (isLocalDailyMock(initData)) {
+  if (isLocalDevMock(initData)) {
     return buildMockDailyStatus(false);
   }
   return apiFetch("/api/daily-reward/", { initData }) as Promise<DailyRewardStatus>;
@@ -305,7 +347,7 @@ export async function fetchDailyRewardStatus(initData: string): Promise<DailyRew
 
 /** Забрать награду за сегодня (POST). */
 export async function claimDailyReward(initData: string): Promise<DailyRewardStatus> {
-  if (isLocalDailyMock(initData)) {
+  if (isLocalDevMock(initData)) {
     return buildMockDailyStatus(true);
   }
   return apiFetch("/api/daily-reward/", { initData, method: "POST" }) as Promise<DailyRewardStatus>;
@@ -324,8 +366,8 @@ export async function fetchAchievements(initData: string): Promise<{
   }>;
   new_achievements: Array<any>;
 }> {
-  if (isLocalDailyMock(initData)) {
-    return fetchPublicJson("/api/test-list-achievements/?telegram_id=777") as Promise<any>;
+  if (isLocalDevMock(initData)) {
+    return { achievements: [], new_achievements: [] };
   }
   return apiFetch("/api/achievements/", { initData }) as Promise<any>;
 }
@@ -341,12 +383,42 @@ export async function fetchCelestialUpgrades(initData: string): Promise<
     max_level: number;
   }>
 > {
+  if (isLocalDevMock(initData)) {
+    return [
+      {
+        id: 9001,
+        name: "Крепкий старт",
+        description: "Начиная каждый цикл с 5,000 осколков",
+        upgrade_type: "start_boost",
+        value: 5000,
+        price_crystals: 3,
+        max_level: 1,
+      },
+      {
+        id: 9002,
+        name: "Память мышц",
+        description: "Стартовый апгрейд «Крепкие пальцы» (+1 к клику)",
+        upgrade_type: "tap_bonus",
+        value: 1,
+        price_crystals: 5,
+        max_level: 1,
+      },
+    ];
+  }
   return apiFetch("/api/celestial-upgrades/", { initData }) as Promise<any>;
 }
 
+/** Для `isLocalDevMock`: результат покупки считается на клиенте (как в PrestigePanel). */
+export type DevCelestialBuyPreview = {
+  upgradeName: string;
+  nextLevel: number;
+  crystalsAfter: number;
+};
+
 export async function buyCelestialUpgrade(
   initData: string,
-  upgradeId: number
+  upgradeId: number,
+  devPreview?: DevCelestialBuyPreview,
 ): Promise<{
   success: boolean;
   upgrade_id: number;
@@ -354,6 +426,18 @@ export async function buyCelestialUpgrade(
   new_level: number;
   crystals_left: number;
 }> {
+  if (isLocalDevMock(initData)) {
+    if (!devPreview) {
+      throw new Error("Local dev celestial buy requires DevCelestialBuyPreview");
+    }
+    return {
+      success: true,
+      upgrade_id: upgradeId,
+      upgrade_name: devPreview.upgradeName,
+      new_level: devPreview.nextLevel,
+      crystals_left: devPreview.crystalsAfter,
+    };
+  }
   return apiFetch("/api/celestial/buy/", {
     method: "POST",
     initData,

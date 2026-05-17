@@ -12,3 +12,6 @@ backend/db.sqlite3
 frontend/.next/
 frontend/node_modules/
 .cursorignore
+.env.example
+env*
+*.env

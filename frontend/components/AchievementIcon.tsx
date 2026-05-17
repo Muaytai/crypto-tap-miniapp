@@ -37,7 +37,7 @@ type IconProps = { uid: string };
 function IconTaps({ uid }: IconProps) {
   const g = `taps-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-a`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#67e8f9" />
@@ -61,7 +61,7 @@ function IconTaps({ uid }: IconProps) {
 function IconCoins({ uid }: IconProps) {
   const g = `coins-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-g`} x1="30%" y1="0%" x2="70%" y2="100%">
           <stop offset="0%" stopColor="#7dd3fc" />
@@ -87,7 +87,7 @@ function IconCoins({ uid }: IconProps) {
 function IconWrench({ uid }: IconProps) {
   const g = `wrench-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-m`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#d4d4d8" />
@@ -107,7 +107,7 @@ function IconWrench({ uid }: IconProps) {
 function IconHammer({ uid }: IconProps) {
   const g = `hammer-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-h`} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#92400e" />
@@ -127,7 +127,7 @@ function IconHammer({ uid }: IconProps) {
 function IconLab({ uid }: IconProps) {
   const g = `lab-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-l`} x1="0%" y1="100%" x2="0%" y2="0%">
           <stop offset="0%" stopColor="#4c1d95" />
@@ -136,8 +136,8 @@ function IconLab({ uid }: IconProps) {
       </defs>
       <path fill={`url(#${g}-l)`} d="M6 26V14l4-1v13H6zm7-15l3 1v14h-3V11zm6 3l4-2v14h-4V14zm6-5l3 1v16h-3V9z" opacity="0.95" />
       <rect x="4" y="26" width="24" height="3" rx="1" fill="#312e81" />
-      <circle cx="10" cy="18" r="1.2" fill="#fbbf24" className="ach-bubble" />
-      <circle cx="17" cy="16" r="0.9" fill="#38bdf8" className="ach-bubble ach-bubble--2" />
+      <circle cx="10" cy="18" r="1.2" fill="#fbbf24" className="animate-ach-bubble" />
+      <circle cx="17" cy="16" r="0.9" fill="#38bdf8" className="animate-ach-bubble-2" />
     </svg>
   );
 }
@@ -145,7 +145,7 @@ function IconLab({ uid }: IconProps) {
 function IconPrestige({ uid }: IconProps) {
   const g = `prestige-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-p`} x1="50%" y1="0%" x2="50%" y2="100%">
           <stop offset="0%" stopColor="#e9d5ff" />
@@ -162,7 +162,7 @@ function IconPrestige({ uid }: IconProps) {
 function IconMedal({ uid }: IconProps) {
   const g = `medal-${uid}`;
   return (
-    <svg viewBox="0 0 32 32" className="ach-icon-svg h-8 w-8" aria-hidden>
+    <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
       <defs>
         <linearGradient id={`${g}-m`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#fcd34d" />
@@ -210,14 +210,19 @@ export function AchievementIcon({ achievement, progressPct }: Props) {
       className={[
         "relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br shadow-inner",
         earned
-          ? "ach-icon-wrap--earned border-[#f6cd2d]/55 from-[#2a2618] to-[#141a22] shadow-[0_0_20px_rgba(246,205,45,0.22)]"
+          ? "animate-ach-gold-ring border-[#f6cd2d]/55 from-[#2a2618] to-[#141a22] shadow-[0_0_20px_rgba(246,205,45,0.22)]"
           : inProgress
-            ? "ach-icon-wrap--active border-cyan-500/35 from-[#13202a] to-[#0f1419]"
-            : "ach-icon-wrap--locked border-[#2f3b47]/80 from-[#151a20] to-[#0d1117]",
+            ? "animate-ach-cyan-glow border-cyan-500/35 from-[#13202a] to-[#0f1419] [&_svg]:animate-float"
+            : "border-[#2f3b47]/80 from-[#151a20] to-[#0d1117] [&_svg]:opacity-[0.72] [&_svg]:[filter:saturate(0.55)_brightness(0.88)]",
       ].join(" ")}
     >
       <span className="relative z-[1] flex items-center justify-center">{icon}</span>
-      {earned ? <span className="ach-sparkle pointer-events-none absolute inset-0 rounded-xl" aria-hidden /> : null}
+      {earned ? (
+        <span
+          className="pointer-events-none absolute inset-[-1px] rounded-xl [animation:ach-shine_3.2s_linear_infinite] [background-size:220%_100%] [background:linear-gradient(115deg,transparent_36%,rgba(255,255,255,0.14)_48%,transparent_58%)]"
+          aria-hidden
+        />
+      ) : null}
     </div>
   );
 }
