@@ -9,10 +9,9 @@ import { useState, useEffect } from "react";
 import { SimpleTapGame } from "@/components/SimpleTapGame";
 import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
-import { DailyReward } from "@/components/DailyReward";
 import { DailyRewardModal } from "@/components/DailyRewardModal";
 import { SettingsModal } from "@/components/SettingsModal";
-import { AchievementsList } from "@/components/AchievementsList";
+import { GoalsTabPanel } from "@/components/GoalsTabPanel";
 import { PrestigePanel } from "@/components/PrestigePanel";
 import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
@@ -285,12 +284,11 @@ export default function Home() {
         );
       case "goals":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#0f141b] px-3 pb-3 pt-3">
-            <h1 className="text-center font-pixel text-2xl text-[#f6cd2d]">Цели</h1>
-            <p className="text-center font-pixel text-[10px] text-[#9da9b8]">Награды и достижения</p>
-            <DailyReward initData={initData} onUpdate={handleDailyReward} />
-            <AchievementsList initData={initData} playerState={playerState} onReward={handleDailyReward} />
-          </div>
+          <GoalsTabPanel
+            initData={initData}
+            playerState={playerState}
+            onReward={handleDailyReward}
+          />
         );
       case "prestige":
         return (
@@ -477,11 +475,12 @@ function DevHome() {
         return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
       case "goals":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pt-3">
-            <h1 className="text-center font-pixel text-lg text-amber-100">Цели</h1>
-            <DailyReward initData="dev" onUpdate={handleDailyReward} />
-            <AchievementsList initData="dev" playerState={playerState} onReward={handleDailyReward} />
-          </div>
+          <GoalsTabPanel
+            initData="dev"
+            playerState={playerState}
+            onReward={handleDailyReward}
+            titleClassName="font-pixel text-lg text-amber-100 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+          />
         );
       case "prestige":
         return (
