@@ -273,19 +273,19 @@ export default function Home() {
     switch (activeTab) {
       case "lab":
         return (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="h-full w-full overflow-y-auto">
             <ItemShop initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
       case "upgrades":
         return (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="h-full w-full overflow-y-auto">
             <UpgradesPanel initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
       case "goals":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#0f141b] px-3 pb-3 pt-3">
+          <div className="h-full w-full overflow-y-auto bg-[#0f141b] px-3 pb-3 pt-3">
             <h1 className="text-center font-pixel text-2xl text-[#f6cd2d]">Цели</h1>
             <p className="text-center font-pixel text-[10px] text-[#9da9b8]">Награды и достижения</p>
             <DailyReward initData={initData} onUpdate={handleDailyReward} />
@@ -294,7 +294,7 @@ export default function Home() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+          <div className="h-full w-full overflow-y-auto p-3 pb-6">
             <PrestigePanel
               initData={initData}
               playerState={playerState}
@@ -305,7 +305,7 @@ export default function Home() {
         );
       case "top":
         return (
-          <div className="flex h-full min-h-0 flex-1 flex-col">
+          <div className="h-full w-full overflow-y-auto">
             <LeaderboardPanel initData={initData} />
           </div>
         );
@@ -317,14 +317,10 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex h-full flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
       >
-        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div
-          className={`h-full min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
-          }`}
-        >
+        <GameHeader playerState={playerState} />
+        <div className="flex-1 min-h-0 overflow-hidden">
           {renderContent()}
         </div>
         <BottomDock active={activeTab} onChange={handleTabChange} />
@@ -363,9 +359,22 @@ function DevHome() {
     items: [],
     upgrades: [],
     available_items: [
+      { id: 100, name: "Комната", base_income_per_second: 10, base_price: 100, icon_name: "" },
+      { id: 101, name: "Персонаж", base_income_per_second: 5, base_price: 50, icon_name: "" },
+      { id: 102, name: "Кнопка", base_income_per_second: 1, base_price: 10, icon_name: "" },
       { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10, icon_name: "" },
       { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50, icon_name: "" },
       { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120, icon_name: "" },
+      { id: 16, name: "Плоскогубцы", base_income_per_second: 1, base_price: 10, icon_name: "" },
+      { id: 17, name: "Молоток", base_income_per_second: 5, base_price: 50, icon_name: "" },
+      { id: 18, name: "Паяльник", base_income_per_second: 25, base_price: 250, icon_name: "" },
+      { id: 103, name: "Стул", base_income_per_second: 3, base_price: 30, icon_name: "" },
+      { id: 104, name: "Стол", base_income_per_second: 4, base_price: 40, icon_name: "" },
+      { id: 105, name: "Компьютер", base_income_per_second: 8, base_price: 80, icon_name: "" },
+      { id: 106, name: "Кружка", base_income_per_second: 2, base_price: 20, icon_name: "" },
+      { id: 107, name: "Ковёр", base_income_per_second: 3, base_price: 30, icon_name: "" },
+      { id: 108, name: "Картина", base_income_per_second: 2, base_price: 20, icon_name: "" },
+      { id: 109, name: "Диван", base_income_per_second: 6, base_price: 60, icon_name: "" },
     ],
     available_upgrades: [
       {
@@ -464,12 +473,20 @@ function DevHome() {
 
     switch (activeTab) {
       case "lab":
-        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><ItemShop initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
+        return (
+          <div className="h-full w-full overflow-y-auto">
+            <ItemShop initData="dev" playerState={playerState} onPurchase={handlePurchase} />
+          </div>
+        );
       case "upgrades":
-        return <div className="flex min-h-0 flex-1 flex-col overflow-hidden"><UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} /></div>;
+        return (
+          <div className="h-full w-full overflow-y-auto">
+            <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
+          </div>
+        );
       case "goals":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pt-3">
+          <div className="h-full w-full overflow-y-auto px-3 pt-3">
             <h1 className="text-center font-pixel text-lg text-amber-100">Цели</h1>
             <DailyReward initData="dev" onUpdate={handleDailyReward} />
             <AchievementsList initData="dev" playerState={playerState} onReward={handleDailyReward} />
@@ -477,7 +494,7 @@ function DevHome() {
         );
       case "prestige":
         return (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain p-3 pb-6 [-webkit-overflow-scrolling:touch]">
+          <div className="h-full w-full overflow-y-auto p-3 pb-6">
             <PrestigePanel
               initData="dev"
               playerState={playerState}
@@ -487,7 +504,11 @@ function DevHome() {
           </div>
         );
       case "top":
-        return <div className="flex min-h-0 flex-1 flex-col"><LeaderboardPanel initData="dev" /></div>;
+        return (
+          <div className="h-full w-full overflow-y-auto">
+            <LeaderboardPanel initData="dev" />
+          </div>
+        );
       default:
         return null;
     }
@@ -496,16 +517,12 @@ function DevHome() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
+        className={`flex h-full flex-col overflow-hidden ${
           activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
         }`}
       >
-        {activeTab !== "lab" && <GameHeader playerState={playerState} />}
-        <div
-          className={`min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" ? "overflow-y-auto" : "overflow-hidden"
-          }`}
-        >
+        <GameHeader playerState={playerState} />
+        <div className="flex-1 min-h-0 overflow-hidden">
           {renderContent()}
         </div>
         <BottomDock active={activeTab} onChange={handleTabChangeDev} />

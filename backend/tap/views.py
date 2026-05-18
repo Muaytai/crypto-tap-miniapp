@@ -718,7 +718,55 @@ class DailyRewardView(APIView):
 
 
 
+class UpgradeComponentView(APIView):
+    """Прокачка компонента в магазине (увеличение уровня)"""
+    authentication_classes = [TelegramMiniAppAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        item_id = request.data.get("item_id")
+        quantity = request.data.get("quantity", 1)  # количество улучшений (1, 10, 50)
+
+        try:
+            item = Item.objects.get(id=item_id, is_active=True, show_in_shop=True, upgrade_by="manual")
+        except Item.DoesNotExist:
+            return Response({"error": "Component not found"}, status=404)
+
+        principal: TelegramPrincipal = request.user
+        player = principal.player
+
+        player_item, created = PlayerItem.objects.get_or_create(
+            player=player,
+            item=item,
+            defaults={"quantity": 1 if item.is_default else 0, "level": 1}
+        )
+
+        # Стоимость повышения уровня
+        price_per_upgrade = item.base_price
+        total_price = price_per_upgrade * quantity
+
+        if player.coins < total_price:
+            return Response({"error": f"Need {total_price} coins"}, status=400)
+
+        with transaction.atomic():
+            player.coins -= total_price
+            player.save()
+
+            # Увеличиваем уровень (максимум 10)
+            new_level = min(player_item.level + quantity, 10)
+            player_item.level = new_level
+            player_item.save()
+
+            # Пересчитываем доход (если компонент даёт доход)
+            player.recalculate_income_per_second()
+
+        return Response({
+            "success": True,
+            "item_id": item.id,
+            "item_name": item.name,
+            "new_level": new_level,
+            "coins_left": player.coins,
+        })
 
 
 
@@ -973,3 +1021,52 @@ class TestListAchievementsView(APIView):
             )
             player.recalculate_income_per_second()
         return Response(achievements_response_data(player))
+
+
+
+class TestComponentUpgradeView(APIView):
+    """Тестовый эндпоинт для прокачки компонента (dev-режим, без авторизации)"""
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        telegram_id = request.GET.get("telegram_id", 777)
+        item_id = int(request.GET.get("item_id", 1))
+        quantity = int(request.GET.get("quantity", 1))
+
+        try:
+            player = Player.objects.get(telegram_id=telegram_id)
+            item = Item.objects.get(id=item_id, is_active=True, show_in_shop=True, upgrade_by="manual")
+        except (Player.DoesNotExist, Item.DoesNotExist):
+            return Response({"error": "Player or component not found"}, status=404)
+
+        player_item, created = PlayerItem.objects.get_or_create(
+            player=player,
+            item=item,
+            defaults={"quantity": 1 if item.is_default else 0, "level": 1}
+        )
+
+        price_per_upgrade = item.base_price
+        total_price = price_per_upgrade * quantity
+
+        if player.coins < total_price:
+            return Response({"error": f"Need {total_price} coins"}, status=400)
+
+        new_level = min(player_item.level + quantity, 10)
+        player_item.level = new_level
+        player_item.save()
+
+        player.coins -= total_price
+        player.save()
+
+        player.recalculate_income_per_second()
+
+        return Response({
+            "success": True,
+            "item_id": item.id,
+            "item_name": item.name,
+            "old_level": player_item.level - quantity,
+            "new_level": new_level,
+            "coins_left": player.coins,
+            "income_per_second": player.cached_income_per_second,
+        })

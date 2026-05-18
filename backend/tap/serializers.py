@@ -41,7 +41,7 @@ class PlayerItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlayerItem
-        fields = ("item_id", "item_name", "item_icon", "quantity", "item_base_income", "item_base_price")
+        fields = ("item_id", "item_name", "item_icon", "quantity", "level", "item_base_income", "item_base_price")
 
 
 class UpgradeSerializer(serializers.ModelSerializer):

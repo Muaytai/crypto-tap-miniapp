@@ -175,7 +175,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     : 0;
 
   return (
-    <div className="flex flex-col gap-4 p-3 overflow-y-auto max-h-[calc(100vh-140px)]">
+    <div className="flex flex-col gap-4 p-3">
       <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
         💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
       </div>
@@ -329,15 +329,11 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
                     // Выбираем иконку по типу апгрейда
                     const getIcon = () => {
                       switch (upgrade.upgrade_type) {
-                        case "tap_bonus":
-                          return "👆";
-                        case "offline_boost":
-                          return "⏰";
-                        case "auto_tap":
-                          return "⚙️";
+                        case "tap_bonus": return "👆";
+                        case "offline_boost": return "⏰";
+                        case "auto_tap": return "⚙️";
                         case "global_income":
-                        default:
-                          return "💎";
+                        default: return "💎";
                       }
                     };
 

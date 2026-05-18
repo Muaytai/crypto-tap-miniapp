@@ -96,6 +96,7 @@ class Player(models.Model):
 
         self.cached_income_per_second = int(base_income * income_multiplier)
         self.save(update_fields=["cached_income_per_second"])
+        self.update_component_levels_by_income() # Обновляем уровни компонентов, привязанных к доходу
         return self.cached_income_per_second
 
     def can_prestige(self) -> bool:
@@ -148,6 +149,37 @@ class Player(models.Model):
         }
 
 
+
+    def update_component_levels_by_income(self):
+        """Обновляет уровни компонентов, привязанных к доходу"""
+        from .models import Item, PlayerItem
+
+        # Пороги уровней (0–9, 10–99, 100–999, 1000–9999, ...)
+        thresholds = [0, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]
+
+        income = self.cached_income_per_second
+        # Определяем уровень по доходу
+        level = 1
+        for i, threshold in enumerate(thresholds):
+            if income >= threshold:
+                level = i + 1
+            else:
+                break
+        level = min(level, 10)  # максимум 10 уровень
+
+        # Обновляем компоненты с upgrade_by = "income"
+        income_items = Item.objects.filter(upgrade_by="income", is_active=True)
+        for item in income_items:
+            player_item, created = PlayerItem.objects.get_or_create(
+                player=self,
+                item=item,
+                defaults={"quantity": 1 if item.is_default else 0, "level": level}
+            )
+            if not created:
+                player_item.level = level
+                player_item.save(update_fields=["level"])
+
+
 class Item(models.Model):
     """Предметы магазина (плоскогубцы, молотки, паяльники и т.д.)"""
     name = models.CharField(max_length=255)
@@ -160,6 +192,23 @@ class Item(models.Model):
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # ========== НОВЫЕ ПОЛЯ (ДЛЯ КОМПОНЕНТОВ) ==========
+    image_url = models.URLField(max_length=512, blank=True, default="") # URL картинки (PNG/SVG) для текущего уровня
+    level = models.PositiveIntegerField(default=1) # Текущий уровень компонента (1–10) — зависит от количества купленных улучшений
+    show_in_shop = models.BooleanField(default=True) # Показывать ли в магазине (для компонентов, которые прокачиваются)
+    is_default = models.BooleanField(default=False) # Доступен ли по умолчанию (без покупки первого экземпляра)
+
+
+    # Тип улучшения:
+    # - "income" — уровень привязан к доходу в секунду (меняется автоматически)
+    # - "manual" — уровень повышается при покупке в магазине
+    UPGRADE_BY_TYPES = [
+        ("income", "По доходу в секунду"),
+        ("manual", "Ручная прокачка в магазине"),
+    ]
+    upgrade_by = models.CharField(max_length=20, choices=UPGRADE_BY_TYPES, default="manual")
+
 
     class Meta:
         ordering = ["sort_order", "id"]
@@ -175,17 +224,29 @@ class Item(models.Model):
         return total
 
 
+    def get_image_for_level(self, current_level: int = None) -> str:
+        """Возвращает URL картинки для текущего уровня"""
+        level_to_use = current_level if current_level is not None else self.level
+        if self.image_url:
+            # Если есть базовый URL, подставляем уровень
+            return self.image_url.replace("{level}", str(level_to_use))
+        # fallback на icon_name
+        return f"/images/items/{self.icon_name}.png"
+
+
 class PlayerItem(models.Model):
     """Связь игрока с предметами (сколько куплено)"""
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="items")
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.PositiveBigIntegerField(default=0)
 
+    level = models.PositiveIntegerField(default=1) # НОВОЕ ПОЛЕ — уровень компонента
+
     class Meta:
         unique_together = [["player", "item"]]
 
     def __str__(self):
-        return f"{self.player} has {self.quantity} x {self.item.name}"
+        return f"{self.player} has {self.quantity} x {self.item.name} (lvl {self.level})"
 
 
 class Upgrade(models.Model):

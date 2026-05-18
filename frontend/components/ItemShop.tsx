@@ -26,6 +26,27 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return price;
   };
 
+  const getTotalUpgradesToLevel = (level: number): number => {
+    let total = 0;
+    for (let lvl = 1; lvl < level; lvl++) total += lvl * 10;
+    return total;
+  };
+
+  const getProgress = (currentLevel: number, totalUpgrades: number): number => {
+    const neededForNext = currentLevel * 10;
+    const alreadySpent = getTotalUpgradesToLevel(currentLevel);
+    const currentLevelUpgrades = totalUpgrades - alreadySpent;
+    const progress = (currentLevelUpgrades / neededForNext) * 100;
+    return Math.min(100, Math.max(0, progress));
+  };
+
+  const getProgressColor = (progress: number): string => {
+    if (progress < 33) return "bg-red-500";
+    if (progress < 66) return "bg-yellow-500";
+    return "bg-green-500";
+  };
+
+  // ---- ОБРАБОТЧИК ПОКУПКИ (DEV + PROD) ----
   const handleBuy = async (itemId: number, quantity: number) => {
     setLoading(itemId);
     setError(null);
@@ -39,7 +60,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         return;
       }
 
-      const currentQty = playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
+      const currentPlayerItem = playerState.items.find(i => i.item_id === itemId);
+      let currentQty = currentPlayerItem?.quantity || 0;
+      let currentLevel = currentPlayerItem?.level || 1;
+
       const price = calculatePrice(item, currentQty, quantity);
 
       if (playerState.player.coins < price) {
@@ -50,18 +74,44 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
       // Имитируем успешную покупку
       setTimeout(() => {
-        const newQty = currentQty + quantity;
+        let remainingUpgrades = quantity;
+        let newQty = currentQty;
+        let newLevel = currentLevel;
 
-        const updatedAvailableItems = playerState.available_items.map(i => {
-          if (i.id === itemId) {
-            let nextPrice = item.base_price;
-            for (let j = 0; j < newQty; j++) {
-              nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
-            }
-            return { ...i, base_price: nextPrice };
-          }
-          return i;
-        });
+        while (remainingUpgrades > 0) {
+          const neededForNext = newLevel * 10;
+          const alreadySpent = getTotalUpgradesToLevel(newLevel);
+          const currentInThisLevel = newQty - alreadySpent;
+          const canTake = Math.min(remainingUpgrades, neededForNext - currentInThisLevel);
+          newQty += canTake;
+          remainingUpgrades -= canTake;
+          if (newQty >= alreadySpent + neededForNext) newLevel++;
+        }
+
+        let nextPrice = item.base_price;
+        for (let j = 0; j < newQty; j++) {
+          nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
+        }
+        const updatedAvailableItems = playerState.available_items.map(i =>
+          i.id === itemId ? { ...i, base_price: nextPrice } : i
+        );
+
+        let updatedItems = playerState.items.map(item =>
+          item.item_id === itemId ? { ...item, quantity: newQty, level: newLevel } : item
+        );
+
+        // Если предмета не было в списке, добавляем
+        if (!playerState.items.some(i => i.item_id === itemId)) {
+          updatedItems.push({
+            item_id: itemId,
+            item_name: item.name,
+            item_icon: item.icon_name || "",
+            quantity: newQty,
+            level: newLevel,
+            item_base_income: item.base_income_per_second,
+            item_base_price: item.base_price,
+          });
+        }
 
         const updatedState = {
           ...playerState,
@@ -69,26 +119,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             ...playerState.player,
             coins: playerState.player.coins - price,
           },
-          items: playerState.items.map(item =>
-            item.item_id === itemId
-              ? { ...item, quantity: newQty }
-              : item
-          ),
+          items: updatedItems,
           available_items: updatedAvailableItems,
           income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
         };
-
-        // Если предмета не было в списке, добавляем
-        if (!playerState.items.some(i => i.item_id === itemId)) {
-          updatedState.items.push({
-            item_id: itemId,
-            item_name: item.name,
-            item_icon: item.icon_name || "",
-            quantity: newQty,
-            item_base_income: item.base_income_per_second,
-            item_base_price: item.base_price,
-          });
-        }
 
         onPurchase(updatedState);
         setLoading(null);
@@ -96,11 +130,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       return;
     }
 
-    // Реальный API-запрос
+    // PROD-режим
     try {
       const result = await buyItem(initData, itemId, quantity);
       if (result.success) {
-        // Обновляем состояние игрока
         const updatedState = {
           ...playerState,
           player: {
@@ -109,7 +142,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           },
           items: playerState.items.map(item =>
             item.item_id === itemId
-              ? { ...item, quantity: result.new_quantity }
+              ? { ...item, quantity: result.new_quantity, level: result.new_level ?? item.level }
               : item
           ),
           income_per_second: result.cached_income_per_second,
@@ -121,12 +154,15 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             item_name: result.item_name,
             item_icon: playerState.available_items.find(i => i.id === itemId)?.icon_name || "",
             quantity: result.new_quantity,
+            level: result.new_level ?? 1,
             item_base_income: playerState.available_items.find(i => i.id === itemId)?.base_income_per_second || 0,
             item_base_price: playerState.available_items.find(i => i.id === itemId)?.base_price || 0,
           };
           updatedState.items.push(newItem);
         }
         onPurchase(updatedState);
+      } else {
+        setError(result.error || "Ошибка покупки");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка покупки");
@@ -144,14 +180,38 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return playerState.items.find(i => i.item_id === itemId)?.quantity || 0;
   };
 
+  const getCurrentLevel = (itemId: number): number => {
+    return playerState.items.find(i => i.item_id === itemId)?.level || 1;
+  };
+
   const allItems = playerState.available_items;
   const currentMultiplier = selectedMultiplier;
 
+  const getFallbackEmoji = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("gpu")) return "🖥️";
+    if (n.includes("asic")) return "⚙️";
+    if (n.includes("блок")) return "🔌";
+    if (n.includes("плоскогубцы")) return "🔧";
+    if (n.includes("молоток")) return "🔨";
+    if (n.includes("паяльник")) return "🛠️";
+    if (n.includes("комната")) return "🏠";
+    if (n.includes("персонаж")) return "🧑";
+    if (n.includes("кнопка")) return "🔘";
+    if (n.includes("стул")) return "🪑";
+    if (n.includes("стол")) return "📐";
+    if (n.includes("компьютер")) return "💻";
+    if (n.includes("кружка")) return "☕";
+    if (n.includes("ковёр")) return "🧶";
+    if (n.includes("картина")) return "🖼️";
+    if (n.includes("диван")) return "🛋️";
+    return "📦";
+  };
+
   return (
-    <div className="flex flex-col gap-4 bg-[#0f0c0a] px-4 pb-6" style={{ minHeight: "100%" }}>
-      {/* Заголовок */}
+    <div className="flex h-full flex-col gap-4 bg-[#0f0c0a] px-4 pb-6">
       <div className="border-b-2 border-amber-500/30 pb-2 pt-4 text-center">
-        <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-amber-500" style={{ textShadow: "0 0 8px rgba(245,158,11,0.4)" }}>МАГАЗИН</h1>
+        <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-amber-500">МАГАЗИН</h1>
       </div>
 
       {/* Кнопки кратности */}
@@ -183,7 +243,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       {/* DEV-режим предупреждение */}
       {isDev && (
         <div className="rounded border-2 border-amber-700/50 bg-amber-950/40 p-2 text-center font-pixel text-[10px] text-amber-300">
-          ⚡ DEV-режим: покупки работают локально без сервера
+          ⚡ DEV-режим: покупки работают локально
         </div>
       )}
 
@@ -191,50 +251,64 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       <div className="flex flex-col gap-4">
         {allItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
+          const currentLevel = getCurrentLevel(item.id);
+          const upgradesNeededForNext = currentLevel * 10;
+          const alreadySpentTotal = getTotalUpgradesToLevel(currentLevel);
+          const progress = getProgress(currentLevel, currentQty);
+          const progressColor = getProgressColor(progress);
           const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
-          const visual = cryptoItemVisual(item.name);
+
+          const fallbackEmoji = getFallbackEmoji(item.name);
 
           return (
-            <div key={item.id} className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-black/30 p-3 transition hover:border-amber-500/50 hover:bg-black/50">
-              <div className="flex flex-[2] items-center gap-4">
-                {/* Иконка */}
-                <div className="flex h-14 w-14 flex-col items-center justify-center rounded-lg border border-amber-500/30 bg-[rgba(20,20,30,0.6)]">
-                  <span className="text-2xl">{visual.emoji}</span>
-                  <span className="font-pixel text-[0.55rem] text-amber-500/70">{visual.tag}</span>
+            <div
+              key={item.id}
+              className="rounded-xl border border-amber-500/20 bg-black/30 p-4 transition hover:border-amber-500/50 hover:bg-black/50"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-amber-500/30 bg-[rgba(20,20,30,0.6)]">
+                    <span className="text-2xl">{fallbackEmoji}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-pixel text-base font-bold text-amber-100">{item.name}</h3>
+                    <p className="mt-1 font-pixel text-xs text-emerald-400">
+                      +{item.base_income_per_second.toLocaleString("ru-RU")}/сек
+                    </p>
+                  </div>
                 </div>
 
-                {/* Информация */}
-                <div>
-                  <h3 className="font-pixel text-base text-amber-100">{item.name}</h3>
-                  <p className="mt-1 font-pixel text-xs text-emerald-400">+{item.base_income_per_second.toLocaleString("ru-RU")}/сек</p>
-                </div>
-
-                {/* Количество купленных */}
-                <div className="min-w-[3rem] text-center">
-                  <span className="font-pixel text-[1.75rem] font-bold text-amber-400">{currentQty}</span>
+                <div className="flex min-w-[90px] flex-col items-end gap-2">
+                  <div className="flex items-center gap-1 font-pixel text-xs text-amber-500">
+                    <span>⏱️</span>
+                    <span>{priceForSelected.toLocaleString("ru-RU")}</span>
+                  </div>
+                  <button
+                    onClick={() => handleBuy(item.id, currentMultiplier)}
+                    disabled={loading === item.id || !canAfford}
+                    className={`tap-target rounded-lg px-4 py-1.5 font-pixel text-[11px] transition ${
+                      canAfford
+                        ? "bg-gradient-to-b from-amber-600 to-orange-700 text-white shadow-md hover:scale-105 active:scale-95"
+                        : "cursor-not-allowed bg-zinc-700 text-zinc-500"
+                    }`}
+                  >
+                    {loading === item.id ? "..." : "Купить"}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex min-w-[6rem] flex-col items-end gap-2">
-                {/* Цена */}
-                <div className="flex items-center gap-1 font-pixel text-xs text-amber-500">
-                  <span>⏱️</span>
-                  <span className="font-bold">{priceForSelected.toLocaleString("ru-RU")}</span>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="font-pixel text-xs text-amber-500">Ур. {currentLevel}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
-
-                {/* Кнопка покупки */}
-                <button
-                  onClick={() => handleBuy(item.id, currentMultiplier)}
-                  disabled={loading === item.id || !canAfford}
-                  className={`tap-target rounded-lg border-none px-5 py-2 font-pixel text-[0.7rem] transition ${
-                    canAfford
-                      ? "cursor-pointer bg-gradient-to-b from-amber-500 to-amber-700 text-white shadow-[0_2px_8px_rgba(245,158,11,0.3)] hover:scale-[1.02] hover:from-amber-400 hover:to-amber-600 active:scale-[0.98]"
-                      : "cursor-not-allowed bg-zinc-700 text-zinc-500"
-                  }`}
-                >
-                  {loading === item.id ? "..." : "Купить"}
-                </button>
+                <span className="font-pixel text-[10px] text-zinc-500">
+                  {currentQty - alreadySpentTotal}/{upgradesNeededForNext}
+                </span>
               </div>
             </div>
           );
@@ -242,9 +316,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {allItems.length === 0 && (
-        <p className="py-8 text-center font-pixel text-xs text-zinc-500">
-          Магазин пуст
-        </p>
+        <p className="py-8 text-center font-pixel text-xs text-zinc-500">Магазин пуст</p>
       )}
     </div>
   );

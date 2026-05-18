@@ -48,6 +48,10 @@ urlpatterns = [
     path("daily-reward", views.DailyRewardView.as_view()),
     path("daily-reward/", views.DailyRewardView.as_view(), name="daily-reward"),
 
+    # улучшение по лэалу компонента
+    path("component/upgrade", views.UpgradeComponentView.as_view()),
+    path("component/upgrade/", views.UpgradeComponentView.as_view(), name="component-upgrade"),
+
     # ВРЕМЕННЫЕ ТЕСТОВЫЕ ЭНДПОИНТЫ
     path("test-auth", views.TestAuthView.as_view()),
     path("test-auth/", views.TestAuthView.as_view(), name="test-auth"),
@@ -62,4 +66,6 @@ urlpatterns = [
     path("test-achievements", views.TestAchievementsView.as_view()),
     path("test-daily", views.TestDailyRewardView.as_view()),
     path("test-list-achievements", views.TestListAchievementsView.as_view()),
+    path("test-component-upgrade", views.TestComponentUpgradeView.as_view()),
+    path("test-component-upgrade/", views.TestComponentUpgradeView.as_view(), name="test-component-upgrade"),
 ]
