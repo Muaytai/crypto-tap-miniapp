@@ -25,7 +25,13 @@ class HealthView(APIView):
     permission_classes = []
 
     def get(self, request):
-        return Response({"status": "ok"})
+        payload = {"status": "ok"}
+        # Диагностика: с телефона через туннель часто бьют в «другой» инстанс Django / другую БД.
+        try:
+            payload["achievement_active_count"] = Achievement.objects.filter(is_active=True).count()
+        except Exception:
+            payload["achievement_active_count"] = None
+        return Response(payload)
 
 
 class PublicConfigView(APIView):
@@ -473,13 +479,18 @@ class AchievementsView(APIView):
 
             current_value = stats.get(ach.trigger_type, 0)
             if current_value >= ach.trigger_value:
-                # Награждаем
+                # get_or_create: параллельные GET (dev / test-list) иначе дают UNIQUE на (player, achievement).
+                _, created = PlayerAchievement.objects.get_or_create(
+                    player=player,
+                    achievement=ach,
+                    defaults={},
+                )
+                if not created:
+                    continue
                 if ach.reward_crystals > 0:
                     player.crystals += ach.reward_crystals
                 if ach.reward_coins > 0:
                     player.coins += ach.reward_coins
-
-                PlayerAchievement.objects.create(player=player, achievement=ach)
                 new_achievements.append({
                     "id": ach.id,
                     "name": ach.name,
@@ -502,12 +513,13 @@ def achievements_response_data(player: Player) -> dict:
         pa.achievement_id for pa in PlayerAchievement.objects.filter(player=player)
     )
     all_achievements = []
-    for ach in Achievement.objects.filter(is_active=True):
+    for ach in Achievement.objects.filter(is_active=True).order_by("sort_order", "id"):
         all_achievements.append(
             {
                 "id": ach.id,
                 "name": ach.name,
                 "description": ach.description,
+                "icon_name": ach.icon_name or "",
                 "trigger_type": ach.trigger_type,
                 "trigger_value": ach.trigger_value,
                 "reward_crystals": ach.reward_crystals,

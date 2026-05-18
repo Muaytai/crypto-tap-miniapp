@@ -358,6 +358,7 @@ export async function fetchAchievements(initData: string): Promise<{
     id: number;
     name: string;
     description: string;
+    icon_name?: string;
     trigger_type: string;
     trigger_value: number;
     reward_crystals: number;
@@ -367,7 +368,22 @@ export async function fetchAchievements(initData: string): Promise<{
   new_achievements: Array<any>;
 }> {
   if (isLocalDevMock(initData)) {
-    return { achievements: [], new_achievements: [] };
+    return fetchPublicJson(
+      "/api/test-list-achievements/?telegram_id=777",
+    ) as Promise<{
+      achievements: Array<{
+        id: number;
+        name: string;
+        description: string;
+        icon_name?: string;
+        trigger_type: string;
+        trigger_value: number;
+        reward_crystals: number;
+        reward_coins: number;
+        is_earned: boolean;
+      }>;
+      new_achievements: Array<unknown>;
+    }>;
   }
   return apiFetch("/api/achievements/", { initData }) as Promise<any>;
 }
