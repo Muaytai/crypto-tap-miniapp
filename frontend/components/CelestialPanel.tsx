@@ -134,8 +134,8 @@ export function CelestialPanel({ initData, playerState, onUpdate }: Props) {
             {upgrades.map((upgrade) => {
               const currentLevel = playerUpgrades.get(upgrade.id) || 0;
               const isMax = currentLevel >= upgrade.max_level;
-              const price = upgrade.price_crystals * (currentLevel + 1);
-              const canAfford = playerState.player.crystals >= price;
+              const purchasePrice = upgrade.price_crystals * (currentLevel + 1);
+              const canAfford = playerState.player.crystals >= purchasePrice;
 
               return (
                 <CelestialUpgradeCard
@@ -143,9 +143,7 @@ export function CelestialPanel({ initData, playerState, onUpdate }: Props) {
                   name={upgrade.name}
                   description={upgrade.description}
                   icon={getCelestialUpgradeIcon(upgrade.upgrade_type, upgrade.icon_name)}
-                  currentLevel={currentLevel}
-                  maxLevel={upgrade.max_level}
-                  priceCrystals={price}
+                  priceCrystals={upgrade.price_crystals}
                   canAfford={canAfford}
                   isMax={isMax}
                   loading={loading === upgrade.id}
