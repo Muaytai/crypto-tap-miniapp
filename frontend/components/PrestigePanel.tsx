@@ -139,11 +139,16 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     const isMax = currentLevel >= upgrade.max_level;
     if (isMax) return;
 
+    const price = upgrade.price_crystals * (currentLevel + 1);
+    if (playerState.player.crystals < price) {
+      setError(`Недостаточно алмазов: нужно ${price}, у вас ${playerState.player.crystals}`);
+      return;
+    }
+
     setBuyingUpgradeId(upgrade.id);
     setError(null);
     setSuccess(null);
     try {
-      const price = upgrade.price_crystals * (currentLevel + 1);
       const result = isDev
         ? await buyCelestialUpgrade(initData, upgrade.id, {
             upgradeName: upgrade.name,
@@ -172,7 +177,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
 
   if (!status) {
     return (
-      <div className="flex min-h-full flex-col bg-[#070b14] px-3 pb-6 pt-2">
+      <div className="bg-[#070b14] px-3 pb-1 pt-2">
         <div className={`${PRESTIGE_PAGE_CARD} px-3 py-16 text-center text-zinc-400`}>
           Загрузка...
         </div>
@@ -191,8 +196,8 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     : 0;
 
   return (
-    <div className="flex min-h-full flex-col bg-[#070b14] pb-2">
-      <div className="min-h-full px-3 pb-2 pt-2">
+    <div className="bg-[#070b14]">
+      <div className="px-3 pb-1 pt-2">
         <div className={`${PRESTIGE_PAGE_CARD} flex flex-col gap-4 p-3`}>
           <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
             💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
@@ -294,8 +299,9 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
                 {upgrades.map((upgrade) => {
                   const currentLevel = playerUpgrades.get(upgrade.id) || 0;
                   const isMax = currentLevel >= upgrade.max_level;
-                  const price = upgrade.price_crystals * (currentLevel + 1);
-                  const canAfford = status.crystals >= price;
+                  const purchasePrice = upgrade.price_crystals * (currentLevel + 1);
+                  const crystalBalance = playerState.player.crystals;
+                  const canAfford = crystalBalance >= purchasePrice;
 
                   return (
                     <CelestialUpgradeCard
@@ -303,9 +309,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
                       name={upgrade.name}
                       description={upgrade.description}
                       icon={getCelestialUpgradeIcon(upgrade.upgrade_type, upgrade.icon_name)}
-                      currentLevel={currentLevel}
-                      maxLevel={upgrade.max_level}
-                      priceCrystals={price}
+                      priceCrystals={upgrade.price_crystals}
                       canAfford={canAfford}
                       isMax={isMax}
                       loading={buyingUpgradeId === upgrade.id}

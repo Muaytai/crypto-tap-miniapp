@@ -292,7 +292,7 @@ export default function Home() {
         );
       case "prestige":
         return (
-          <div className="pb-20 [-webkit-overflow-scrolling:touch]">
+          <div className="pb-2 [-webkit-overflow-scrolling:touch]">
             <PrestigePanel
               initData={initData}
               playerState={playerState}
@@ -484,7 +484,7 @@ function DevHome() {
         );
       case "prestige":
         return (
-          <div className="pb-20 [-webkit-overflow-scrolling:touch]">
+          <div className="pb-2 [-webkit-overflow-scrolling:touch]">
             <PrestigePanel
               initData="dev"
               playerState={playerState}
