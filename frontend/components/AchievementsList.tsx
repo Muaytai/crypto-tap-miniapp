@@ -132,7 +132,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5 pb-1">
       {newAchievements.length > 0 && (
         <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-700/95 to-orange-800/95 p-3 text-center shadow-xl backdrop-blur-sm">
           <p className="text-sm font-bold text-white">₿ Новая цель выполнена!</p>
@@ -144,7 +144,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         </div>
       )}
 
-      <div className="rounded-2xl border border-cyan-500/20 bg-[#141920]/90 p-3 shadow-[0_0_24px_rgba(14,116,144,0.12)] backdrop-blur-md">
+      <div className="shrink-0 rounded-2xl border border-cyan-500/20 bg-[#141920]/90 p-3 shadow-[0_0_24px_rgba(14,116,144,0.12)] backdrop-blur-md">
         <div className="mb-2 flex items-center justify-between">
           <p className="font-pixel text-xs uppercase tracking-wide text-cyan-200/80">Прогресс целей</p>
           <p className="font-pixel text-sm text-[#f6cd2d]">
@@ -157,7 +157,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
       </div>
 
       {spotlight ? (
-        <div className="rounded-xl border border-orange-400/35 bg-gradient-to-br from-orange-950/40 via-[#141920]/95 to-violet-950/30 p-3 shadow-[0_0_24px_rgba(251,146,60,0.12)] ring-1 ring-amber-400/20">
+        <div className="shrink-0 rounded-xl border border-orange-400/35 bg-gradient-to-br from-orange-950/40 via-[#141920]/95 to-violet-950/30 p-3 shadow-[0_0_24px_rgba(251,146,60,0.12)] ring-1 ring-amber-400/20">
           <p className="mb-2 font-pixel text-[9px] uppercase tracking-widest text-orange-300/90">
             Следующая большая цель
           </p>
