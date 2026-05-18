@@ -326,8 +326,8 @@ export default function Home() {
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
         <div
           className={`h-full min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" || activeTab === "prestige"
-              ? "overflow-y-auto"
+            activeTab === "top" || activeTab === "prestige" || activeTab === "goals"
+              ? "overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:[scrollbar-width:thin] sm:[&::-webkit-scrollbar]:block sm:[&::-webkit-scrollbar]:w-1.5 sm:[&::-webkit-scrollbar-thumb]:rounded-full sm:[&::-webkit-scrollbar-thumb]:bg-amber-700/50"
               : "overflow-hidden"
           }`}
         >
@@ -512,8 +512,8 @@ function DevHome() {
         {activeTab !== "lab" && <GameHeader playerState={playerState} />}
         <div
           className={`h-full min-h-0 flex-1 ${
-            activeTab === "top" || activeTab === "goals" || activeTab === "prestige"
-              ? "overflow-y-auto"
+            activeTab === "top" || activeTab === "prestige" || activeTab === "goals"
+              ? "overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:[scrollbar-width:thin] sm:[&::-webkit-scrollbar]:block sm:[&::-webkit-scrollbar]:w-1.5 sm:[&::-webkit-scrollbar-thumb]:rounded-full sm:[&::-webkit-scrollbar-thumb]:bg-amber-700/50"
               : "overflow-hidden"
           }`}
         >

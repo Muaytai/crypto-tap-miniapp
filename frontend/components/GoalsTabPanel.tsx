@@ -13,9 +13,9 @@ type Props = {
 
 export function GoalsTabPanel({ initData, playerState, onReward, titleClassName }: Props) {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex w-full flex-col">
       <GoalsRoomBackground />
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3 pt-3 [-webkit-overflow-scrolling:touch]">
+      <div className="relative z-10 flex flex-col gap-3 px-3 pb-3 pt-3">
         <header className="shrink-0 text-center">
           <h1
             className={
