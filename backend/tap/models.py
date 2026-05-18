@@ -312,6 +312,12 @@ class CelestialUpgrade(models.Model):
         ("offline_boost", "Увеличение оффлайн лимита"),
         ("auto_tap", "Авто-тап (каждую секунду)"),
         ("start_boost", "Начальный бонус осколков"),
+        ("referral_boost", "Бонус за приглашённого друга"),
+        ("idle_master", "Мастер пассивного дохода"),
+        ("lab_discount", "Скидка на лаборатории"),
+        ("daily_login_crystal", "Бонус алмазов за ежедневный вход"),
+        ("prestige_inertia", "Инерция после перезакалки"),
+        ("quantum_resonance", "Удвоенный бонус алмазов за закалку"),
     ]
     upgrade_type = models.CharField(max_length=50, choices=UPGRADE_TYPES, default="global_income")
 

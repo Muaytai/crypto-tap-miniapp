@@ -64,8 +64,11 @@ urlpatterns = [
     path("test-prestige", views.TestPrestigeView.as_view()),
     path("test-prestige/", views.TestPrestigeView.as_view(), name="test-prestige"),
     path("test-achievements", views.TestAchievementsView.as_view()),
+    path("test-achievements/", views.TestAchievementsView.as_view(), name="test-achievements"),
     path("test-daily", views.TestDailyRewardView.as_view()),
+    path("test-daily/", views.TestDailyRewardView.as_view(), name="test-daily"),
     path("test-list-achievements", views.TestListAchievementsView.as_view()),
     path("test-component-upgrade", views.TestComponentUpgradeView.as_view()),
     path("test-component-upgrade/", views.TestComponentUpgradeView.as_view(), name="test-component-upgrade"),
+    path("test-list-achievements/", views.TestListAchievementsView.as_view(), name="test-list-achievements"),
 ]
