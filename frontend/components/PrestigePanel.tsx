@@ -196,12 +196,10 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     : 0;
 
   return (
-    <div className="bg-[#070b14]">
-      <div className="px-3 pb-1 pt-2">
-        <div className={`${PRESTIGE_PAGE_CARD} flex flex-col gap-4 p-3`}>
-          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
-            💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
-          </div>
+    <div className="flex flex-col gap-4 p-3">
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
+        💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
+      </div>
 
           <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
         <div className="mb-4 flex items-center justify-between">
@@ -263,19 +261,16 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           )}
           {error && <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">{error}</div>}
 
-          {status.can_prestige ? (
-            <button
-              onClick={handlePrestige}
-              disabled={loading}
-              className="tap-target w-full rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 py-4 text-lg font-bold text-white transition hover:scale-105 active:scale-95 disabled:opacity-50"
-            >
-              {loading ? "Закалка..." : "Сделать перезакалку"}
-            </button>
-          ) : (
-            <button disabled className="w-full rounded-2xl bg-zinc-800 py-4 text-lg font-bold text-zinc-500">
-              🔒 Недостаточно кликов
-            </button>
-          )}
+                    // Выбираем иконку по типу апгрейда
+                    const getIcon = () => {
+                      switch (upgrade.upgrade_type) {
+                        case "tap_bonus": return "👆";
+                        case "offline_boost": return "⏰";
+                        case "auto_tap": return "⚙️";
+                        case "global_income":
+                        default: return "💎";
+                      }
+                    };
 
           <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/30 p-3">
             <p className="text-xs text-zinc-400">
