@@ -1,4 +1,5 @@
-﻿"use client";
+﻿
+"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -57,6 +58,17 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     current_prestige_count: number;
     crystals: number;
   } | null>(null);
+
+  // Функция для получения иконки по типу апгрейда
+  const getIcon = (upgradeType: string) => {
+    switch (upgradeType) {
+      case "tap_bonus": return "👆";
+      case "offline_boost": return "⏰";
+      case "auto_tap": return "⚙️";
+      case "global_income":
+      default: return "💎";
+    }
+  };
 
   useEffect(() => {
     const loadStatusAndUpgrades = async () => {
@@ -196,136 +208,118 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     : 0;
 
   return (
-    <div className="bg-[#070b14]">
-      <div className="px-3 pb-1 pt-2">
-        <div className={`${PRESTIGE_PAGE_CARD} flex flex-col gap-4 p-3`}>
-          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
-            💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
-          </div>
+    <div className="flex flex-col gap-4 p-3">
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
+        💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
+      </div>
 
-          <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
+      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
         <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold tracking-wide text-amber-200">ПЕРЕЗАКАЛКА</h2>
-              <p className="text-sm font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")} АЛМАЗОВ</p>
-            </div>
+          <h2 className="text-lg font-bold tracking-wide text-amber-200">ПЕРЕЗАКАЛКА</h2>
+          <p className="text-sm font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")} АЛМАЗОВ</p>
+        </div>
 
-            <div className="rounded-2xl border border-amber-400/20 bg-black/30 p-4">
-              <p className="text-center text-sm font-semibold uppercase tracking-wider text-amber-200">
-                Алмазы закалки
-              </p>
-              <p className="mt-2 text-center text-4xl font-black text-cyan-300">
-                💎 {status.crystals.toLocaleString("ru-RU")}
-              </p>
-              {status.can_prestige && potentialCrystals > 0 && (
-                <p className="mt-2 text-center text-sm font-medium text-amber-200/90">
-                  За эту перезакалку: +{potentialCrystals.toLocaleString("ru-RU")}
-                </p>
-              )}
-              <p className="mt-2 text-center text-sm text-zinc-400">
-                Перезакалок: {status.current_prestige_count} · Порог: {status.prestige_threshold.toLocaleString("ru-RU")}
-              </p>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-base font-semibold text-zinc-200">
-                {status.can_prestige ? "Перезакалка доступна" : "Перезакалка недоступна"}
-              </p>
-              {!status.can_prestige && (
-                <p className="mt-1 text-sm text-zinc-400">
-                  Заработай {status.prestige_threshold.toLocaleString("ru-RU")} кликов всего, чтобы открыть.
-                </p>
-              )}
-
-              <div className="mt-2 flex justify-between text-sm text-zinc-400">
-                <span>{status.total_earned_all_time.toLocaleString("ru-RU")}</span>
-                <span>{status.prestige_threshold.toLocaleString("ru-RU")}</span>
-              </div>
-              <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <p className="mt-3 text-sm text-zinc-400">
-                💡 Закалка сбрасывает весь прогресс, но даёт алмазы. Каждый алмаз даёт постоянные бонусы
-                через небесные апгрейды.
-              </p>
-              {needed > 0 && (
-                <p className="mt-1 text-xs text-zinc-500">
-                  Осталось: {needed.toLocaleString("ru-RU")} кликов
-                </p>
-              )}
-            </div>
-          </div>
-
-          {success && (
-            <div className="rounded-xl bg-emerald-500/20 p-3 text-sm text-emerald-300">{success}</div>
-          )}
-          {error && <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">{error}</div>}
-
-          {status.can_prestige ? (
-            <button
-              onClick={handlePrestige}
-              disabled={loading}
-              className="tap-target w-full rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 py-4 text-lg font-bold text-white transition hover:scale-105 active:scale-95 disabled:opacity-50"
-            >
-              {loading ? "Закалка..." : "Сделать перезакалку"}
-            </button>
-          ) : (
-            <button disabled className="w-full rounded-2xl bg-zinc-800 py-4 text-lg font-bold text-zinc-500">
-              🔒 Недостаточно кликов
-            </button>
-          )}
-
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/30 p-3">
-            <p className="text-xs text-zinc-400">
-              ⚡ После закалки вы получите алмазы, но потеряете все монеты, предметы и обычные улучшения.
-              <br />
-              💎 Алмазы и небесные апгрейды останутся с вами навсегда!
+        <div className="rounded-2xl border border-amber-400/20 bg-black/30 p-4">
+          <p className="text-center text-sm font-semibold uppercase tracking-wider text-amber-200">
+            Алмазы закалки
+          </p>
+          <p className="mt-2 text-center text-4xl font-black text-cyan-300">
+            💎 {status.crystals.toLocaleString("ru-RU")}
+          </p>
+          {status.can_prestige && potentialCrystals > 0 && (
+            <p className="mt-2 text-center text-sm font-medium text-amber-200/90">
+              За эту перезакалку: +{potentialCrystals.toLocaleString("ru-RU")}
             </p>
+          )}
+          <p className="mt-2 text-center text-sm text-zinc-400">
+            Перезакалок: {status.current_prestige_count} · Порог: {status.prestige_threshold.toLocaleString("ru-RU")}
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p className="text-base font-semibold text-zinc-200">
+            {status.can_prestige ? "Перезакалка доступна" : "Перезакалка недоступна"}
+          </p>
+          {!status.can_prestige && (
+            <p className="mt-1 text-sm text-zinc-400">
+              Заработай {status.prestige_threshold.toLocaleString("ru-RU")} кликов всего, чтобы открыть.
+            </p>
+          )}
+
+          <div className="mt-2 flex justify-between text-sm text-zinc-400">
+            <span>{status.total_earned_all_time.toLocaleString("ru-RU")}</span>
+            <span>{status.prestige_threshold.toLocaleString("ru-RU")}</span>
           </div>
-
-          <section className="flex flex-col gap-3">
-            <div>
-              <h3 className="text-lg font-bold tracking-wide text-white">НЕБЕСНЫЕ АПГРЕЙДЫ</h3>
-              <p className="mt-1 text-sm text-zinc-400">
-                Баланс:{" "}
-                <CrystalCost amount={status.crystals} className="font-semibold text-cyan-300" />
-              </p>
-            </div>
-
-            {upgrades.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {upgrades.map((upgrade) => {
-                  const currentLevel = playerUpgrades.get(upgrade.id) || 0;
-                  const isMax = currentLevel >= upgrade.max_level;
-                  const purchasePrice = upgrade.price_crystals * (currentLevel + 1);
-                  const crystalBalance = playerState.player.crystals;
-                  const canAfford = crystalBalance >= purchasePrice;
-
-                  return (
-                    <CelestialUpgradeCard
-                      key={upgrade.id}
-                      name={upgrade.name}
-                      description={upgrade.description}
-                      icon={getCelestialUpgradeIcon(upgrade.upgrade_type, upgrade.icon_name)}
-                      priceCrystals={upgrade.price_crystals}
-                      canAfford={canAfford}
-                      isMax={isMax}
-                      loading={buyingUpgradeId === upgrade.id}
-                      onBuy={() => handleBuyUpgrade(upgrade)}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
-                Небесные апгрейды пока не настроены
-              </div>
-            )}
-          </section>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <p className="mt-3 text-sm text-zinc-400">
+            💡 Закалка сбрасывает весь прогресс, но даёт алмазы. Каждый алмаз даёт постоянные бонусы
+            через небесные апгрейды.
+          </p>
+          {needed > 0 && (
+            <p className="mt-1 text-xs text-zinc-500">
+              Осталось: {needed.toLocaleString("ru-RU")} кликов
+            </p>
+          )}
         </div>
       </div>
+
+      {success && (
+        <div className="rounded-xl bg-emerald-500/20 p-3 text-sm text-emerald-300">{success}</div>
+      )}
+      {error && <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">{error}</div>}
+
+      <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/30 p-3">
+        <p className="text-xs text-zinc-400">
+          ⚡ После закалки вы получите алмазы, но потеряете все монеты, предметы и обычные улучшения.
+          <br />
+          💎 Алмазы и небесные апгрейды останутся с вами навсегда!
+        </p>
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h3 className="text-lg font-bold tracking-wide text-white">НЕБЕСНЫЕ АПГРЕЙДЫ</h3>
+          <p className="mt-1 text-sm text-zinc-400">
+            Баланс:{" "}
+            <CrystalCost amount={status.crystals} className="font-semibold text-cyan-300" />
+          </p>
+        </div>
+
+        {upgrades.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {upgrades.map((upgrade) => {
+              const currentLevel = playerUpgrades.get(upgrade.id) || 0;
+              const isMax = currentLevel >= upgrade.max_level;
+              const purchasePrice = upgrade.price_crystals * (currentLevel + 1);
+              const crystalBalance = playerState.player.crystals;
+              const canAfford = crystalBalance >= purchasePrice;
+
+              return (
+                <CelestialUpgradeCard
+                  key={upgrade.id}
+                  name={upgrade.name}
+                  description={upgrade.description}
+                  icon={getCelestialUpgradeIcon(upgrade.upgrade_type, upgrade.icon_name)}
+                  priceCrystals={upgrade.price_crystals}
+                  canAfford={canAfford}
+                  isMax={isMax}
+                  loading={buyingUpgradeId === upgrade.id}
+                  onBuy={() => handleBuyUpgrade(upgrade)}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
+            Небесные апгрейды пока не настроены
+          </div>
+        )}
+      </section>
     </div>
   );
 }
