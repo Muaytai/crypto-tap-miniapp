@@ -210,18 +210,18 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
   return (
     <div className="flex flex-col gap-4 p-3">
       <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
-        💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
+        💡 Чем выше нагрузка, тем ценнее награда после перепрокачки.
       </div>
 
       <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-wide text-amber-200">ПЕРЕЗАКАЛКА</h2>
+          <h2 className="text-lg font-bold tracking-wide text-amber-200">ЭВОЛЮЦИЯ</h2>
           <p className="text-sm font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")} АЛМАЗОВ</p>
         </div>
 
         <div className="rounded-2xl border border-amber-400/20 bg-black/30 p-4">
           <p className="text-center text-sm font-semibold uppercase tracking-wider text-amber-200">
-            Алмазы закалки
+            Алмазы эволюции
           </p>
           <p className="mt-2 text-center text-4xl font-black text-cyan-300">
             💎 {status.crystals.toLocaleString("ru-RU")}
@@ -232,13 +232,13 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
             </p>
           )}
           <p className="mt-2 text-center text-sm text-zinc-400">
-            Перезакалок: {status.current_prestige_count} · Порог: {status.prestige_threshold.toLocaleString("ru-RU")}
+            Перепрокачек: {status.current_prestige_count} · Порог: {status.prestige_threshold.toLocaleString("ru-RU")}
           </p>
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="text-base font-semibold text-zinc-200">
-            {status.can_prestige ? "Перезакалка доступна" : "Перезакалка недоступна"}
+            {status.can_prestige ? "Перепрокачка доступна" : "Перепрокачка недоступна"}
           </p>
           {!status.can_prestige && (
             <p className="mt-1 text-sm text-zinc-400">
@@ -257,7 +257,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
             />
           </div>
           <p className="mt-3 text-sm text-zinc-400">
-            💡 Закалка сбрасывает весь прогресс, но даёт алмазы. Каждый алмаз даёт постоянные бонусы
+            💡 Прокачка сбрасывает весь прогресс, но даёт алмазы. Каждый алмаз даёт постоянные бонусы
             через небесные апгрейды.
           </p>
           {needed > 0 && (
@@ -275,7 +275,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
 
       <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/30 p-3">
         <p className="text-xs text-zinc-400">
-          ⚡ После закалки вы получите алмазы, но потеряете все монеты, предметы и обычные улучшения.
+          ⚡ После прокачки вы получите алмазы, но потеряете все монеты, предметы и обычные улучшения.
           <br />
           💎 Алмазы и небесные апгрейды останутся с вами навсегда!
         </p>
