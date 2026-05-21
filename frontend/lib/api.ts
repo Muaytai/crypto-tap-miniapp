@@ -129,6 +129,7 @@ export type PlayerState = {
     name: string;
     base_income_per_second: number;
     base_price: number;
+    icon_name?: string;  // ← ДОБАВИТЬ
   }>;
   available_upgrades: Array<{
     id: number;
@@ -137,6 +138,7 @@ export type PlayerState = {
     value: number;
     base_price: number;
     min_total_taps: number;
+    icon_name?: string;
   }>;
   income_per_second: number;
 };
@@ -397,6 +399,7 @@ export async function fetchCelestialUpgrades(initData: string): Promise<
     value: number;
     price_crystals: number;
     max_level: number;
+    icon_name?: string;
   }>
 > {
   if (isLocalDevMock(initData)) {
