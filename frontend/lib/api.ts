@@ -407,7 +407,7 @@ export async function fetchCelestialUpgrades(initData: string): Promise<
       {
         id: 9001,
         name: "Крепкий старт",
-        description: "Начиная каждый цикл с 5,000 осколков",
+        description: "Начиная каждый цикл с 5,000 кликов",
         upgrade_type: "start_boost",
         value: 5000,
         price_crystals: 3,
