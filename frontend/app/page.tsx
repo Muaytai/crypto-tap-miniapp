@@ -6,6 +6,8 @@
  * Повторное нажатие на активную кнопку закрывает меню.
  */
 import { useState, useEffect } from "react";
+import { DailyReward } from "@/components/DailyReward";
+import { AchievementsList } from "@/components/AchievementsList";
 import { SimpleTapGame } from "@/components/SimpleTapGame";
 import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
