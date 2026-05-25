@@ -180,14 +180,14 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
         💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
       </div>
 
-      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-orange-950/20 p-4">
+      <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-cyan-950/20 p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-wide text-amber-200">ПЕРЕЗАКАЛКА</h2>
+          <h2 className="text-lg font-bold tracking-wide text-cyan-200">ПЕРЕЗАКАЛКА</h2>
           <p className="text-sm font-semibold text-cyan-300">💎 {status.crystals.toLocaleString("ru-RU")} АЛМАЗОВ</p>
         </div>
 
-        <div className="rounded-2xl border border-amber-400/20 bg-black/30 p-4">
-          <p className="text-center text-sm font-semibold uppercase tracking-wider text-amber-200">
+        <div className="rounded-2xl border border-cyan-400/20 bg-black/30 p-4">
+          <p className="text-center text-sm font-semibold uppercase tracking-wider text-cyan-200">
             Алмазы закалки
           </p>
           <p className="mt-2 text-center text-4xl font-black text-cyan-300">💎 {potentialCrystals}</p>
@@ -212,7 +212,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           </div>
           <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-500 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -243,7 +243,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
         <button
           onClick={handlePrestige}
           disabled={loading}
-          className="tap-target w-full rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 py-4 text-lg font-bold text-white transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="tap-target w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-600 py-4 text-lg font-bold text-white transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           {loading ? "Закалка..." : "Сделать перезакалку"}
         </button>

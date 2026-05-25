@@ -33,7 +33,7 @@ const DOCK: { id: DockTab; label: string; title: string }[] = [
 
 function GameHeader({ playerState }: { playerState: PlayerState }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-white/10 bg-black/60 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))]">
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))]">
       <div className="flex w-full items-center justify-between gap-2 font-pixel text-[10px] text-white/80 sm:text-[11px]">
         <div className="flex items-center gap-1">
           <span aria-hidden>₿</span>
@@ -60,15 +60,15 @@ function LabTopBar(props: {
   showDailyBadge?: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-black/40 px-2 py-2 pt-[max(0.35rem,env(safe-area-inset-top,0px))] backdrop-blur-md">
-      <span className="pl-1 font-pixel text-[10px] font-bold uppercase tracking-wider text-white/70">
+    <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-black/70 px-2 py-2 pt-[max(0.35rem,env(safe-area-inset-top,0px))] backdrop-blur-md">
+      <span className="pl-1 font-pixel text-[10px] font-bold uppercase tracking-wider text-white/80">
         Crypto Tap
       </span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={props.onOpenDaily}
-          className="tap-target relative rounded-md border border-white/20 bg-white/5 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/10"
+          className="tap-target relative rounded-md border border-white/20 bg-white/10 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/20"
         >
           <span aria-hidden>📅</span>
           {props.showDailyBadge ? (
@@ -80,7 +80,7 @@ function LabTopBar(props: {
         <button
           type="button"
           onClick={props.onOpenSettings}
-          className="tap-target rounded-md border border-white/20 bg-white/5 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/10"
+          className="tap-target rounded-md border border-white/20 bg-white/10 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/20"
         >
           ⚙
         </button>
@@ -131,7 +131,7 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
   };
 
   return (
-    <nav className="z-30 shrink-0 border-t border-white/10 bg-black/40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="z-30 shrink-0 border-t border-white/10 bg-black/70 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex justify-between gap-0.5 px-1 py-2">
         {DOCK.map((tab) => {
           const on = props.active === tab.id;
@@ -142,8 +142,8 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
               onClick={() => props.onChange(tab.id)}
               className={`tap-target flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 transition-all duration-200 ${
                 on
-                  ? "bg-white/10 shadow-lg scale-105"
-                  : "hover:bg-white/5 hover:scale-105"
+                  ? "bg-white/15 shadow-lg scale-105"
+                  : "hover:bg-white/10 hover:scale-105"
               }`}
             >
               <img
@@ -241,7 +241,7 @@ export default function Home() {
     return (
       <MobileAppFrame>
         <div className="flex flex-1 items-center justify-center bg-[#070b14]">
-          <div className="text-center font-pixel text-amber-200/80">
+          <div className="text-center font-pixel text-white/80">
             <div className="mx-auto mb-3 h-8 w-8 animate-pulse border-2 border-cyan-500 bg-cyan-500/20" />
             <p className="text-xs">Загрузка...</p>
           </div>
@@ -304,7 +304,7 @@ export default function Home() {
               <div className="px-2 pt-2">
                 <CryptoTipBanner
                   seed={playerState.player.telegram_id}
-                  className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none"
+                  className="border-white-900/25 bg-transparent px-1 py-1.5 shadow-none"
                 />
               </div>
               <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
@@ -504,7 +504,7 @@ function DevHome() {
             />
             <div className="flex flex-1 flex-col">
               <div className="px-2 pt-2">
-                <CryptoTipBanner seed={777} className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none" />
+                <CryptoTipBanner seed={777} className="bg-black-900/25 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
               <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
             </div>
@@ -529,7 +529,7 @@ function DevHome() {
       case "goals":
         return (
           <div className="h-full w-full overflow-y-auto px-3 pt-3">
-            <h1 className="text-center font-pixel text-lg text-amber-100">Цели</h1>
+            <h1 className="text-center font-pixel text-lg text-white">Цели</h1>
             <DailyReward initData="dev" onUpdate={handleDailyReward} />
             <AchievementsList initData="dev" playerState={playerState} onReward={handleDailyReward} />
           </div>

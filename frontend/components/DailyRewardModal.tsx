@@ -139,7 +139,7 @@ export function DailyRewardModal({
         {status && (
           <p className="mt-3 text-center text-sm text-slate-300">
             Серия:{" "}
-            <span className="font-semibold text-amber-300">
+            <span className="font-semibold text-cyan-300">
               {status.streak_display}
             </span>{" "}
             {streakWord(status.streak_display)} подряд
@@ -161,7 +161,7 @@ export function DailyRewardModal({
                 const isClaimable = row.status === "claimable" && status.can_claim;
                 const isClaimed = row.status === "claimed";
                 const cellClass = isClaimable
-                  ? "border-amber-400/80 bg-amber-400/20 text-amber-50 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
+                  ? "border-cyan-400/80 bg-cyan-400/20 text-cyan-50 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
                   : isClaimed
                     ? "border-white/10 bg-slate-700/50 text-slate-200"
                     : "border-white/5 bg-[#252b3d] text-slate-500";
@@ -177,7 +177,7 @@ export function DailyRewardModal({
                     </span>
                     {isClaimed && <span className="mt-1 text-[11px] leading-none text-emerald-300/90">✓</span>}
                     {isClaimable && (
-                      <span className="mt-1 text-[9px] uppercase tracking-wide text-amber-200/90">сегодня</span>
+                      <span className="mt-1 text-[9px] uppercase tracking-wide text-cyan-200/90">сегодня</span>
                     )}
                   </div>
                 );

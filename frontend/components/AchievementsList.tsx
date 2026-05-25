@@ -96,7 +96,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
     <div className="flex flex-col gap-2.5">
       {/* Уведомления о новых достижениях */}
       {newAchievements.length > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 p-3 text-center shadow-xl">
+        <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 p-3 text-center shadow-xl">
           <p className="text-sm font-bold text-white">🏆 Новое достижение! 🏆</p>
           {newAchievements.map((ach, idx) => (
             <p key={idx} className="text-xs text-white/90">
