@@ -99,10 +99,10 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
   };
 
   const labels: Record<DockTab, string> = {
-    lab: "Лаба",
-    upgrades: "Апгр.",
-    goals: "Цели",
-    prestige: "Закал.",
+    lab: "Магазин",
+    upgrades: "Улучшения",
+    goals: "Достижения",
+    prestige: "Начать заново",
     top: "Топ",
   };
 
@@ -294,13 +294,13 @@ export default function Home() {
     if (activeTab === null) {
       return (
         <DynamicBackground incomePerSecond={playerState.income_per_second} isDev={!initData}>
-          <div className="relative flex min-h-full flex-1 flex-col">
+          <div className="relative flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
               onOpenSettings={() => setSettingsModalOpen(true)}
               showDailyBadge={dailyClaimable}
             />
-            <div className="relative flex flex-col">
+            <div className="relative flex flex-1 flex-col">
               <div className="px-2 pt-2">
                 <CryptoTipBanner
                   seed={playerState.player.telegram_id}
