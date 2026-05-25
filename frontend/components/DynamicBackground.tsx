@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { PlayerState } from "@/lib/api";
 
 type Props = {
   incomePerSecond: number;
   children?: React.ReactNode;
   isDev?: boolean;
+  onIncomeChange?: (newIncome: number) => void; // колбэк для изменения дохода
 };
 
-// Пороги для смены фона
 const BACKGROUND_LEVELS = [
   { threshold: 0, level: 1, name: "background_1" },
   { threshold: 100, level: 2, name: "background_2" },
@@ -22,14 +23,14 @@ const BACKGROUND_LEVELS = [
   { threshold: 10000000000, level: 10, name: "background_10" },
 ];
 
-export function DynamicBackground({ incomePerSecond, children, isDev = false }: Props) {
+export function DynamicBackground({ incomePerSecond, children, isDev = false, onIncomeChange }: Props) {
   const [backgroundLevel, setBackgroundLevel] = useState(1);
   const [backgroundImage, setBackgroundImage] = useState("/images/backgrounds/background_1.png");
   const [imgError, setImgError] = useState(false);
   const [testIncome, setTestIncome] = useState(incomePerSecond);
   const [panelVisible, setPanelVisible] = useState(true);
 
-  // Сохраняем состояние панели в localStorage
+  // Сохраняем состояние панели
   useEffect(() => {
     if (!isDev) return;
     const saved = localStorage.getItem("dev_panel_visible");
@@ -42,12 +43,18 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
     localStorage.setItem("dev_panel_visible", String(newState));
   };
 
-  const effectiveIncome = isDev && testIncome !== undefined ? testIncome : incomePerSecond;
+  // Применяем тестовый доход к глобальному состоянию
+  const applyTestIncome = (value: number) => {
+    setTestIncome(value);
+    if (onIncomeChange) {
+      onIncomeChange(value);
+    }
+  };
 
   useEffect(() => {
     let currentLevel = 1;
     for (let i = BACKGROUND_LEVELS.length - 1; i >= 0; i--) {
-      if (effectiveIncome >= BACKGROUND_LEVELS[i].threshold) {
+      if (incomePerSecond >= BACKGROUND_LEVELS[i].threshold) {
         currentLevel = BACKGROUND_LEVELS[i].level;
         break;
       }
@@ -55,14 +62,21 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
     setBackgroundLevel(currentLevel);
     setBackgroundImage(`/images/backgrounds/background_${currentLevel}.png`);
     setImgError(false);
-  }, [effectiveIncome]);
+  }, [incomePerSecond]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1) + "B";
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+    return num.toString();
+  };
 
   return (
     <div
       className="relative h-full w-full bg-cover bg-center bg-no-repeat transition-all duration-500"
       style={{
         backgroundImage: imgError ? "none" : `url(${backgroundImage})`,
-        backgroundColor: imgError ? "#1a1410" : undefined,
+        backgroundColor: imgError ? "#0a0a0a" : undefined,
       }}
     >
       {/* DEV-контроллер */}
@@ -71,8 +85,8 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
           className={`fixed bottom-20 left-2 z-50 rounded-xl bg-black/90 backdrop-blur-md transition-all duration-300 ${
             panelVisible ? "p-3" : "p-2"
           }`}
+          style={{ width: panelVisible ? "260px" : "auto" }}
         >
-          {/* Кнопка свернуть/развернуть */}
           <button
             onClick={togglePanel}
             className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white hover:bg-cyan-500"
@@ -82,27 +96,38 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
 
           {panelVisible ? (
             <>
-              <p className="font-pixel text-[10px] text-cyan-400">ТЕСТ ФОНОВ</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="font-pixel text-xs text-white">
-                  Доход: {effectiveIncome.toLocaleString("ru-RU")}/сек
-                </span>
+              <p className="font-pixel text-[10px] text-cyan-400 mb-2">DEV: ТЕСТ ДОХОДА</p>
+
+              {/* Ползунок с фиксированной шириной */}
+              <div className="flex items-center gap-2">
+                <span className="font-pixel text-[9px] text-white/60 w-12">0</span>
                 <input
                   type="range"
                   min="0"
                   max="10000000000"
                   step="100"
                   value={testIncome}
-                  onChange={(e) => setTestIncome(Number(e.target.value))}
-                  className="h-2 w-40 appearance-none rounded-lg bg-zinc-700"
+                  onChange={(e) => applyTestIncome(Number(e.target.value))}
+                  className="h-2 rounded-lg appearance-none bg-zinc-700 flex-1"
+                  style={{ width: "140px" }}
                 />
+                <span className="font-pixel text-[9px] text-white/60 w-12 text-right">10B</span>
               </div>
-              <div className="mt-2 flex flex-wrap gap-1">
+
+              {/* Текущее значение */}
+              <div className="mt-2 text-center">
+                <span className="font-pixel text-[11px] text-cyan-400">
+                  {formatNumber(testIncome)} / сек
+                </span>
+              </div>
+
+              {/* Кнопки уровней фона */}
+              <div className="mt-2 flex flex-wrap gap-1 justify-center">
                 {BACKGROUND_LEVELS.map((level) => (
                   <button
                     key={level.level}
-                    onClick={() => setTestIncome(level.threshold + (level.level === 1 ? 1 : 0))}
-                    className={`rounded px-2 py-0.5 font-pixel text-[9px] ${
+                    onClick={() => applyTestIncome(level.threshold + (level.level === 1 ? 1 : 0))}
+                    className={`rounded px-2 py-0.5 font-pixel text-[9px] transition ${
                       backgroundLevel === level.level
                         ? "bg-cyan-600 text-white"
                         : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
@@ -112,14 +137,18 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
                   </button>
                 ))}
               </div>
-              <p className="mt-2 font-pixel text-[8px] text-zinc-500">
-                Текущий фон: {backgroundLevel}/10
+
+              <p className="mt-2 text-center font-pixel text-[8px] text-zinc-500">
+                Фон: {backgroundLevel}/10
               </p>
             </>
           ) : (
             <div className="flex items-center gap-1">
               <span className="font-pixel text-[10px] text-cyan-400">🎨</span>
               <span className="font-pixel text-[10px] text-white">Фон {backgroundLevel}/10</span>
+              <span className="font-pixel text-[9px] text-zinc-500 ml-1">
+                ({formatNumber(incomePerSecond)}/с)
+              </span>
             </div>
           )}
         </div>

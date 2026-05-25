@@ -16,43 +16,44 @@ type Props = {
 
 // Пороги для смены кнопки
 const BUTTON_LEVELS = [
-  { threshold: 0, level: 1 },
-  { threshold: 100, level: 2 },
-  { threshold: 1000, level: 3 },
-  { threshold: 10000, level: 4 },
-  { threshold: 100000, level: 5 },
-  { threshold: 1000000, level: 6 },
-  { threshold: 10000000, level: 7 },
-  { threshold: 100000000, level: 8 },
-  { threshold: 1000000000, level: 9 },
-  { threshold: 10000000000, level: 10 },
+  { threshold: 0, level: 1, image: "/images/buttons/button_1.png" },
+  { threshold: 100, level: 2, image: "/images/buttons/button_2.png" },
+  { threshold: 1000, level: 3, image: "/images/buttons/button_3.png" },
+  { threshold: 10000, level: 4, image: "/images/buttons/button_4.png" },
+  { threshold: 100000, level: 5, image: "/images/buttons/button_5.png" },
+  { threshold: 1000000, level: 6, image: "/images/buttons/button_6.png" },
+  { threshold: 10000000, level: 7, image: "/images/buttons/button_7.png" },
+  { threshold: 100000000, level: 8, image: "/images/buttons/button_8.png" },
+  { threshold: 1000000000, level: 9, image: "/images/buttons/button_9.png" },
+  { threshold: 10000000000, level: 10, image: "/images/buttons/button_10.png" },
 ];
 
 export function SimpleTapGame({ initData, playerState, onSync }: Props) {
   const [clickMultiplier, setClickMultiplier] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [buttonLevel, setButtonLevel] = useState(1);
   const [buttonImage, setButtonImage] = useState("/images/buttons/button_1.png");
   const [imgError, setImgError] = useState(false);
   const pendingTapsRef = useRef(0);
   const lastSyncRef = useRef(Date.now());
   const isDev = initData === "dev" || initData === "test_init_data";
 
-  // Обновляем кнопку при изменении дохода
-  useEffect(() => {
-    if (!playerState) return;
-    const income = playerState.income_per_second;
-    let currentLevel = 1;
+  // Функция получения картинки по доходу
+  const getButtonImageByIncome = useCallback((income: number): string => {
     for (let i = BUTTON_LEVELS.length - 1; i >= 0; i--) {
       if (income >= BUTTON_LEVELS[i].threshold) {
-        currentLevel = BUTTON_LEVELS[i].level;
-        break;
+        return BUTTON_LEVELS[i].image;
       }
     }
-    setButtonLevel(currentLevel);
-    setButtonImage(`/images/buttons/button_${currentLevel}.png`);
+    return "/images/buttons/button_1.png";
+  }, []);
+
+  // Обновляем картинку кнопки при изменении дохода
+  useEffect(() => {
+    if (!playerState) return;
+    const newImage = getButtonImageByIncome(playerState.income_per_second);
+    setButtonImage(newImage);
     setImgError(false);
-  }, [playerState?.income_per_second]);
+  }, [playerState?.income_per_second, getButtonImageByIncome]);
 
   // Обновляем множитель из улучшений
   useEffect(() => {
@@ -69,7 +70,7 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
     }
   }, [playerState, isDev]);
 
-  // Периодическая синхронизация накопленных тапов с сервером
+  // Периодическая синхронизация
   useEffect(() => {
     if (isDev) return;
     if (!playerState) return;
@@ -91,7 +92,7 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
       } catch (error) {
         console.error("Sync failed:", error);
       }
-    }, 5000); // синхронизируем каждые 5 секунд
+    }, 5000);
 
     return () => clearInterval(syncInterval);
   }, [initData, onSync, isDev, playerState]);
@@ -101,7 +102,6 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 160);
 
-    // Мгновенно обновляем локальное отображение (оптимистичное обновление)
     if (playerState) {
       onSync(
         { ...playerState.player, coins: playerState.player.coins + clickMultiplier },
@@ -143,10 +143,9 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
         </p>
       </div>
 
-      {/* Растягивающийся div, чтобы затолкнуть кнопку вниз */}
       <div className="flex-1" />
 
-      {/* Кнопка тапа — прижата к низу */}
+      {/* Кнопка тапа */}
       <div className="flex flex-col items-center">
         <div className="relative">
           <div className="absolute inset-[-20%] rounded-full bg-cyan-400/10 blur-2xl animate-tap-glow" />
@@ -162,7 +161,10 @@ export function SimpleTapGame({ initData, playerState, onSync }: Props) {
                 src={buttonImage}
                 alt="Tap"
                 className="h-full w-full object-contain"
-                onError={() => setImgError(true)}
+                onError={() => {
+                  setImgError(true);
+                  setButtonImage("/images/buttons/button_1.png");
+                }}
               />
             ) : (
               <span className="text-6xl">{baseIcon}</span>

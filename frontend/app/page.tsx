@@ -196,7 +196,6 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
-  // Глобальный таймер для пассивного дохода — ЕДИНСТВЕННЫЙ источник
   useEffect(() => {
     if (!playerState) return;
     if (playerState.income_per_second === 0) return;
@@ -230,6 +229,15 @@ export default function Home() {
       setActiveTab(null);
     } else {
       setActiveTab(tabId);
+    }
+  };
+
+  const handleIncomeChange = (newIncome: number) => {
+    if (playerState) {
+      setPlayerState({
+        ...playerState,
+        income_per_second: newIncome,
+      });
     }
   };
 
@@ -293,7 +301,11 @@ export default function Home() {
   const renderContent = () => {
     if (activeTab === null) {
       return (
-        <DynamicBackground incomePerSecond={playerState.income_per_second} isDev={!initData}>
+        <DynamicBackground
+          incomePerSecond={playerState.income_per_second}
+          isDev={!initData}
+          onIncomeChange={handleIncomeChange}
+        >
           <div className="relative flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
@@ -304,7 +316,7 @@ export default function Home() {
               <div className="px-2 pt-2">
                 <CryptoTipBanner
                   seed={playerState.player.telegram_id}
-                  className="border-white-900/25 bg-transparent px-1 py-1.5 shadow-none"
+                  className="border-white/10 bg-transparent px-1 py-1.5 shadow-none"
                 />
               </div>
               <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
@@ -492,10 +504,21 @@ function DevHome() {
     }));
   };
 
+  const handleIncomeChangeDev = (newIncome: number) => {
+    setPlayerState(prev => ({
+      ...prev,
+      income_per_second: newIncome,
+    }));
+  };
+
   const renderContent = () => {
     if (activeTab === null) {
       return (
-        <DynamicBackground incomePerSecond={playerState.income_per_second} isDev={true}>
+        <DynamicBackground
+          incomePerSecond={playerState.income_per_second}
+          isDev={true}
+          onIncomeChange={handleIncomeChangeDev}
+        >
           <div className="flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
@@ -504,7 +527,7 @@ function DevHome() {
             />
             <div className="flex flex-1 flex-col">
               <div className="px-2 pt-2">
-                <CryptoTipBanner seed={777} className="bg-black-900/25 bg-transparent px-1 py-1.5 shadow-none" />
+                <CryptoTipBanner seed={777} className="border-white/10 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
               <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
             </div>
