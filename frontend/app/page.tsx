@@ -17,38 +17,38 @@ import { GoalsTabPanel } from "@/components/GoalsTabPanel";
 import { PrestigePanel } from "@/components/PrestigePanel";
 import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
-import { MiningRoomBackground } from "@/components/MiningRoomBackground";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
+import { DynamicBackground } from "@/components/DynamicBackground";
 import { fetchDailyRewardStatus, fetchFullState, type PlayerState } from "@/lib/api";
 import { watchTelegramInitData } from "@/lib/telegram";
 
 type DockTab = "lab" | "upgrades" | "goals" | "prestige" | "top";
 
 const DOCK: { id: DockTab; label: string; title: string }[] = [
-  { id: "lab", label: "🔧", title: "Лаба" },
-  { id: "upgrades", label: "🚀", title: "Апгр." },
-  { id: "goals", label: "🏆", title: "Цели" },
-  { id: "prestige", label: "💎", title: "Эвол." },
+  { id: "lab", label: "🔧", title: "Магазин" },
+  { id: "upgrades", label: "🚀", title: "Улучшения" },
+  { id: "goals", label: "🏆", title: "Достижения" },
+  { id: "prestige", label: "💎", title: "Начать заново" },
   { id: "top", label: "🥇", title: "Топ" },
 ];
 
 function GameHeader({ playerState }: { playerState: PlayerState }) {
   return (
-    <header className="sticky top-0 z-10 border-b-4 border-amber-900/70 bg-[#1a1410]/95 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))]">
-      <div className="flex w-full items-center justify-between gap-2 font-pixel text-[10px] text-amber-100 sm:text-[11px]">
-        <div className="flex items-center gap-1 text-cyan-200">
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))]">
+      <div className="flex w-full items-center justify-between gap-2 font-pixel text-[10px] text-white/80 sm:text-[11px]">
+        <div className="flex items-center gap-1">
           <span aria-hidden>₿</span>
-          <span className="tabular-nums font-bold">
+          <span className="tabular-nums font-bold text-cyan-400">
             {Math.floor(playerState.player.coins).toLocaleString("ru-RU")}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-cyan-300/90">
-          <span aria-hidden>⛏</span>
-          <span className="tabular-nums">{playerState.income_per_second} х/с</span>
+        <div className="flex items-center gap-1">
+          <span aria-hidden>⚡</span>
+          <span className="tabular-nums text-white/70">{playerState.income_per_second} х/с</span>
         </div>
-        <div className="flex items-center gap-1 text-purple-300">
-          <span aria-hidden>◆</span>
-          <span className="tabular-nums">{playerState.player.crystals}</span>
+        <div className="flex items-center gap-1">
+          <span aria-hidden>💎</span>
+          <span className="tabular-nums text-purple-400">{playerState.player.crystals}</span>
         </div>
       </div>
     </header>
@@ -61,19 +61,19 @@ function LabTopBar(props: {
   showDailyBadge?: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between border-b border-amber-900/20 bg-[#0a0e14]/35 px-2 py-2 pt-[max(0.35rem,env(safe-area-inset-top,0px))] backdrop-blur-[8px]">
-      <span className="pl-1 font-pixel text-[10px] font-bold uppercase tracking-wider text-amber-200/70">
+    <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-black/70 px-2 py-2 pt-[max(0.35rem,env(safe-area-inset-top,0px))] backdrop-blur-md">
+      <span className="pl-1 font-pixel text-[10px] font-bold uppercase tracking-wider text-white/80">
         Crypto Tap
       </span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={props.onOpenDaily}
-          className="tap-target relative rounded-md border-2 border-amber-700/60 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-amber-100"
+          className="tap-target relative rounded-md border border-white/20 bg-white/10 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/20"
         >
           <span aria-hidden>📅</span>
           {props.showDailyBadge ? (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-sm bg-sky-600 px-0.5 text-[9px] leading-none text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-sm bg-cyan-500 px-0.5 text-[9px] leading-none text-white">
               1
             </span>
           ) : null}
@@ -81,7 +81,7 @@ function LabTopBar(props: {
         <button
           type="button"
           onClick={props.onOpenSettings}
-          className="tap-target rounded-md border-2 border-zinc-600 bg-[#120f0c] px-2 py-1 font-pixel text-[11px] text-zinc-200"
+          className="tap-target rounded-md border border-white/20 bg-white/10 px-2 py-1 font-pixel text-[11px] text-white/80 hover:bg-white/20"
         >
           ⚙
         </button>
@@ -91,8 +91,48 @@ function LabTopBar(props: {
 }
 
 function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => void }) {
+  const icons: Record<DockTab, string> = {
+    lab: "/icons/lab.svg",
+    upgrades: "/icons/upgrades.svg",
+    goals: "/icons/goals.svg",
+    prestige: "/icons/prestige.svg",
+    top: "/icons/top.svg",
+  };
+
+  const labels: Record<DockTab, string> = {
+    lab: "Магазин",
+    upgrades: "Улучшения",
+    goals: "Достижения",
+    prestige: "Начать заново",
+    top: "Топ",
+  };
+
+  const getIconClass = (tabId: DockTab, isActive: boolean): string => {
+    if (!isActive) return "nav-icon opacity-70";
+    switch (tabId) {
+      case "lab": return "nav-icon-lab-active";
+      case "upgrades": return "nav-icon-upgrades-active";
+      case "goals": return "nav-icon-goals-active";
+      case "prestige": return "nav-icon-prestige-active";
+      case "top": return "nav-icon-top-active";
+      default: return "nav-icon-active";
+    }
+  };
+
+  const getTextClass = (tabId: DockTab, isActive: boolean): string => {
+    if (!isActive) return "text-white/40";
+    switch (tabId) {
+      case "lab": return "text-cyan-400 drop-shadow-[0_0_6px_#06b6d4]";
+      case "upgrades": return "text-violet-400 drop-shadow-[0_0_6px_#8b5cf6]";
+      case "goals": return "text-blue-400 drop-shadow-[0_0_6px_#3b82f6]";
+      case "prestige": return "text-fuchsia-400 drop-shadow-[0_0_6px_#d946ef]";
+      case "top": return "text-cyan-400 drop-shadow-[0_0_6px_#06b6d4]";
+      default: return "text-white";
+    }
+  };
+
   return (
-    <nav className="z-30 shrink-0 border-t-4 border-amber-950 bg-[#14100c]/98 pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="z-30 shrink-0 border-t border-white/10 bg-black/70 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex justify-between gap-0.5 px-1 py-2">
         {DOCK.map((tab) => {
           const on = props.active === tab.id;
@@ -101,15 +141,21 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
               key={tab.id}
               type="button"
               onClick={() => props.onChange(tab.id)}
-              className={`tap-target flex min-w-0 flex-1 flex-col items-center rounded-md border-2 px-1 py-1 transition-colors ${
+              className={`tap-target flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 transition-all duration-200 ${
                 on
-                  ? "border-white bg-black/35 text-amber-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]"
-                  : "border-transparent text-amber-200/45 hover:text-amber-100/80"
+                  ? "bg-white/15 shadow-lg scale-105"
+                  : "hover:bg-white/10 hover:scale-105"
               }`}
             >
-              <span className="text-lg leading-none sm:text-xl">{tab.label}</span>
-              <span className="font-pixel mt-0.5 max-w-[4.2rem] truncate text-[8px] leading-tight sm:text-[9px]">
-                {tab.title}
+              <img
+                src={icons[tab.id]}
+                alt={labels[tab.id]}
+                className={`h-6 w-6 transition-all duration-200 ${getIconClass(tab.id, on)}`}
+              />
+              <span
+                className={`font-pixel text-[9px] uppercase tracking-wide transition-all duration-200 ${getTextClass(tab.id, on)}`}
+              >
+                {labels[tab.id]}
               </span>
             </button>
           );
@@ -151,7 +197,6 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
-  // Глобальный таймер для пассивного дохода — ЕДИНСТВЕННЫЙ источник
   useEffect(() => {
     if (!playerState) return;
     if (playerState.income_per_second === 0) return;
@@ -181,11 +226,19 @@ export default function Home() {
   }, [initData, playerState, activeTab]);
 
   const handleTabChange = (tabId: DockTab) => {
-    // Если нажали на уже активную вкладку — закрываем её (возврат на главную)
     if (activeTab === tabId) {
       setActiveTab(null);
     } else {
       setActiveTab(tabId);
+    }
+  };
+
+  const handleIncomeChange = (newIncome: number) => {
+    if (playerState) {
+      setPlayerState({
+        ...playerState,
+        income_per_second: newIncome,
+      });
     }
   };
 
@@ -197,7 +250,7 @@ export default function Home() {
     return (
       <MobileAppFrame>
         <div className="flex flex-1 items-center justify-center bg-[#070b14]">
-          <div className="text-center font-pixel text-amber-200/80">
+          <div className="text-center font-pixel text-white/80">
             <div className="mx-auto mb-3 h-8 w-8 animate-pulse border-2 border-cyan-500 bg-cyan-500/20" />
             <p className="text-xs">Загрузка...</p>
           </div>
@@ -228,7 +281,7 @@ export default function Home() {
 
   const handlePrestige = (newState: PlayerState) => {
     setPlayerState(newState);
-    setActiveTab(null); // после закалки возвращаемся на главную
+    setActiveTab(null);
   };
 
   const handleDailyReward = (coins: number, crystals: number) => {
@@ -249,25 +302,28 @@ export default function Home() {
   const renderContent = () => {
     if (activeTab === null) {
       return (
-        <div className="relative flex min-h-full flex-1 flex-col">
-          <MiningRoomBackground />
-          <div className="relative z-10 flex flex-col">
+        <DynamicBackground
+          incomePerSecond={playerState.income_per_second}
+          isDev={!initData}
+          onIncomeChange={handleIncomeChange}
+        >
+          <div className="relative flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
               onOpenSettings={() => setSettingsModalOpen(true)}
               showDailyBadge={dailyClaimable}
             />
-            <div className="relative flex flex-col">
+            <div className="relative flex flex-1 flex-col">
               <div className="px-2 pt-2">
                 <CryptoTipBanner
                   seed={playerState.player.telegram_id}
-                  className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none"
+                  className="border-white/10 bg-transparent px-1 py-1.5 shadow-none"
                 />
               </div>
               <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
             </div>
           </div>
-        </div>
+        </DynamicBackground>
       );
     }
 
@@ -395,7 +451,6 @@ function DevHome() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
-  // Глобальный таймер для DEV
   useEffect(() => {
     if (playerState.income_per_second === 0) return;
 
@@ -450,25 +505,35 @@ function DevHome() {
     }));
   };
 
+  const handleIncomeChangeDev = (newIncome: number) => {
+    setPlayerState(prev => ({
+      ...prev,
+      income_per_second: newIncome,
+    }));
+  };
+
   const renderContent = () => {
     if (activeTab === null) {
       return (
-        <div className="relative flex min-h-full flex-1 flex-col">
-          <MiningRoomBackground />
-          <div className="relative z-10 flex flex-col">
+        <DynamicBackground
+          incomePerSecond={playerState.income_per_second}
+          isDev={true}
+          onIncomeChange={handleIncomeChangeDev}
+        >
+          <div className="flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
               onOpenSettings={() => setSettingsModalOpen(true)}
               showDailyBadge={dailyClaimable}
             />
-            <div className="relative flex flex-col">
+            <div className="flex flex-1 flex-col">
               <div className="px-2 pt-2">
-                <CryptoTipBanner seed={777} className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none" />
+                <CryptoTipBanner seed={777} className="border-white/10 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
               <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
             </div>
           </div>
-        </div>
+        </DynamicBackground>
       );
     }
 
@@ -488,7 +553,7 @@ function DevHome() {
       case "goals":
         return (
           <div className="h-full w-full overflow-y-auto px-3 pt-3">
-            <h1 className="text-center font-pixel text-lg text-amber-100">Цели</h1>
+            <h1 className="text-center font-pixel text-lg text-white">Цели</h1>
             <DailyReward initData="dev" onUpdate={handleDailyReward} />
             <AchievementsList initData="dev" playerState={playerState} onReward={handleDailyReward} />
           </div>

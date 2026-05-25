@@ -1,346 +1,191 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { fetchFullState, type PlayerState } from "@/lib/api";
-import {
-  dockTabFromHash,
-  getTelegramWebApp,
-  historyUrlForDockTab,
-  watchTelegramInitData,
-} from "@/lib/telegram";
-import { SimpleTapGame } from "@/components/SimpleTapGame";
-import { ItemShop } from "@/components/ItemShop";
-import { UpgradesPanel } from "@/components/UpgradesPanel";
-import { PrestigePanel } from "@/components/PrestigePanel";
-import { DailyReward } from "@/components/DailyReward";
-import { AchievementsList } from "@/components/AchievementsList";
-import { CelestialPanel } from "@/components/CelestialPanel";
-import { CryptoTipBanner } from "@/components/CryptoTipBanner";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { syncTaps, type PlayerState } from "@/lib/api";
+import { loadGameSettings } from "@/lib/gameSettings";
 
-type DockTab = "game" | "shop" | "upgrades" | "prestige" | "profile" | "top";
-
-// Названия кнопок под референс
-const TAB_LABELS: Record<DockTab, { label: string; icon: string }> = {
-  game: { label: "Капля", icon: "💧" },
-  shop: { label: "Лаба", icon: "🔬" },
-  upgrades: { label: "Антр.", icon: "⚡" },
-  prestige: { label: "Закал.", icon: "🔥" },
-  celestial: { label: "Неб.", icon: "🌌" },
-  profile: { label: "Цели", icon: "🎯" },
-  top: { label: "Топ", icon: "🏆" },
+type Props = {
+  initData: string;
+  playerState: PlayerState | null;
+  onSync: (
+    newPlayer: PlayerState["player"],
+    incomePerSecond: number,
+    clickMultiplier?: number,
+  ) => void;
 };
 
-export function TapGame() {
-  const [initData, setInitData] = useState("");
-  const [playerState, setPlayerState] = useState<PlayerState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dockTab, setDockTab] = useState<DockTab>("game");
-  const [leaderboard, setLeaderboard] = useState<any>(null);
-  const [lbLoading, setLbLoading] = useState(false);
-  const [publicBotUsername, setPublicBotUsername] = useState<string | null>(null);
+// Пороги для смены кнопки (как у фона)
+const BUTTON_LEVELS = [
+  { threshold: 0, level: 1 },
+  { threshold: 100, level: 2 },
+  { threshold: 1000, level: 3 },
+  { threshold: 10000, level: 4 },
+  { threshold: 100000, level: 5 },
+  { threshold: 1000000, level: 6 },
+  { threshold: 10000000, level: 7 },
+  { threshold: 100000000, level: 8 },
+  { threshold: 1000000000, level: 9 },
+  { threshold: 10000000000, level: 10 },
+];
 
-  // Загрузка initData
-  useEffect(() => {
-    return watchTelegramInitData((raw) => {
-      setInitData(raw);
-    });
-  }, []);
+export function SimpleTapGame({ initData, playerState, onSync }: Props) {
+  const [clickMultiplier, setClickMultiplier] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [buttonLevel, setButtonLevel] = useState(1);
+  const [buttonImage, setButtonImage] = useState("/images/buttons/button_1.png");
+  const [imgError, setImgError] = useState(false);
+  const pendingTapsRef = useRef(0);
+  const lastSyncRef = useRef(Date.now());
+  const isDev = initData === "dev" || initData === "test_init_data";
 
-  // Навигация по вкладкам
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const tab = dockTabFromHash() as DockTab;
-    const allowedTabs: DockTab[] = ["game", "shop", "upgrades", "prestige", "profile", "top"];
-    setDockTab(allowedTabs.includes(tab) ? tab : "game");
-
-    const onHash = () => {
-      const newTab = dockTabFromHash() as DockTab;
-      setDockTab(allowedTabs.includes(newTab) ? newTab : "game");
-    };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-
-  const goTab = useCallback((t: DockTab) => {
-    // Если нажали на уже активную вкладку — закрываем её (возвращаемся на game)
-    if (t === dockTab && t !== "game") {
-      setDockTab("game");
-      const path = window.location.pathname + window.location.search;
-      window.history.replaceState(null, "", historyUrlForDockTab(path, "game"));
-    } else {
-      setDockTab(t);
-      const path = window.location.pathname + window.location.search;
-      window.history.replaceState(null, "", historyUrlForDockTab(path, t as any));
-    }
-  }, [dockTab]);
-
-  // Загрузка данных игрока
-  const loadState = useCallback(async () => {
-    if (!initData) return;
-    setLoading(true);
-    try {
-      const state = await fetchFullState(initData);
-      setPlayerState(state);
-    } catch (error) {
-      console.error("Failed to load state:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [initData]);
-
-  useEffect(() => {
-    if (initData) {
-      loadState();
-    }
-  }, [initData, loadState]);
-
-  // Загрузка лидерборда
-  useEffect(() => {
-    if (dockTab !== "top" || !initData) return;
-    let cancelled = false;
-    const loadLb = async () => {
-      setLbLoading(true);
-      try {
-        const res = await fetch("/api/leaderboard/?limit=20", {
-          headers: { "X-Telegram-Init-Data": initData },
-        });
-        const data = await res.json();
-        if (!cancelled) setLeaderboard(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (!cancelled) setLbLoading(false);
+  // Функция обновления кнопки по доходу
+  const updateButtonByIncome = useCallback((income: number) => {
+    let currentLevel = 1;
+    for (let i = BUTTON_LEVELS.length - 1; i >= 0; i--) {
+      if (income >= BUTTON_LEVELS[i].threshold) {
+        currentLevel = BUTTON_LEVELS[i].level;
+        break;
       }
-    };
-    loadLb();
-    return () => { cancelled = true; };
-  }, [dockTab, initData]);
-
-  const handleSync = (newPlayer: PlayerState["player"], incomePerSecond: number, _clickMultiplier?: number) => {
-    if (playerState) {
-      setPlayerState({
-        ...playerState,
-        player: newPlayer,
-        income_per_second: incomePerSecond,
-      });
     }
-  };
+    setButtonLevel(currentLevel);
+    setButtonImage(`/images/buttons/button_${currentLevel}.png`);
+    setImgError(false);
+  }, []);
 
-  const handlePurchase = (newState: PlayerState) => {
-    setPlayerState(newState);
-  };
+  // Обновляем кнопку при изменении дохода (включая тестовый слайдер)
+  useEffect(() => {
+    if (!playerState) return;
+    updateButtonByIncome(playerState.income_per_second);
+  }, [playerState?.income_per_second, updateButtonByIncome]);
 
-  const handlePrestige = (newState: PlayerState) => {
-    setPlayerState(newState);
-    setDockTab("game");
-  };
+  // Обновляем множитель из улучшений
+  useEffect(() => {
+    if (!playerState) return;
 
-  const handleDailyReward = (coins: number, crystals: number) => {
-    if (playerState) {
-      setPlayerState({
-        ...playerState,
-        player: {
-          ...playerState.player,
-          coins: playerState.player.coins + coins,
-          crystals: playerState.player.crystals + crystals,
-        },
-      });
+    if (isDev) {
+      const purchasedClickUpgrade = playerState.available_upgrades.find(
+        u => u.upgrade_type === "click_multiplier" &&
+        playerState.upgrades.some(pu => pu.upgrade_id === u.id)
+      );
+      setClickMultiplier(purchasedClickUpgrade?.value || 1);
+    } else {
+      setClickMultiplier(1);
     }
-  };
+  }, [playerState, isDev]);
 
-  const twa = typeof window !== "undefined" ? getTelegramWebApp() : undefined;
-  const tgUser = (twa?.initDataUnsafe?.user ?? {}) as { id?: number; first_name?: string; username?: string; photo_url?: string };
+  // Периодическая синхронизация
+  useEffect(() => {
+    if (isDev) return;
+    if (!playerState) return;
 
-  if (!initData || loading || !playerState) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-          <p className="text-zinc-500">Загрузка...</p>
-        </div>
-      </div>
-    );
+    const syncInterval = setInterval(async () => {
+      const tapsToSend = pendingTapsRef.current;
+      if (tapsToSend === 0) return;
+
+      try {
+        const result = await syncTaps(initData, tapsToSend, 0);
+        if (result.player) {
+          onSync(result.player, result.income_per_second, result.click_multiplier);
+          if (result.click_multiplier) {
+            setClickMultiplier(result.click_multiplier);
+          }
+        }
+        pendingTapsRef.current = 0;
+        lastSyncRef.current = Date.now();
+      } catch (error) {
+        console.error("Sync failed:", error);
+      }
+    }, 5000);
+
+    return () => clearInterval(syncInterval);
+  }, [initData, onSync, isDev, playerState]);
+
+  const handleTap = useCallback(() => {
+    pendingTapsRef.current += 1;
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 160);
+
+    if (playerState) {
+      onSync(
+        { ...playerState.player, coins: playerState.player.coins + clickMultiplier },
+        playerState.income_per_second,
+        clickMultiplier,
+      );
+    }
+
+    if (loadGameSettings().vibration) {
+      const twa = (window as unknown as { Telegram?: { WebApp?: { HapticFeedback?: { impactOccurred: (s: string) => void } } } })
+        .Telegram?.WebApp;
+      twa?.HapticFeedback?.impactOccurred("light");
+    }
+  }, [clickMultiplier, playerState, onSync]);
+
+  if (!playerState) {
+    return <div className="flex justify-center p-8 font-mono text-zinc-500">Загрузка...</div>;
   }
 
-  const renderContent = () => {
-    switch (dockTab) {
-      case "game":
-        return (
-          <>
-            <div className="flex-1">
-              <SimpleTapGame
-                initData={initData}
-                playerState={playerState}
-                onSync={handleSync}
-              />
-            </div>
-            <CryptoTipBanner />
-          </>
-        );
-      case "shop":
-        return (
-          <div className="flex-1 pb-20">
-            <ItemShop
-              initData={initData}
-              playerState={playerState}
-              onPurchase={handlePurchase}
-            />
-          </div>
-        );
-      case "upgrades":
-        return (
-          <div className="flex-1 pb-20">
-            <UpgradesPanel
-              initData={initData}
-              playerState={playerState}
-              onPurchase={handlePurchase}
-            />
-          </div>
-        );
-      case "prestige":
-        return (
-          <div className="flex-1 pb-20">
-            <PrestigePanel
-              initData={initData}
-              playerState={playerState}
-              onPrestige={handlePrestige}
-            />
-          </div>
-        );
-      case "celestial":
-        return (
-          <div className="flex-1 pb-20">
-            <CelestialPanel
-              initData={initData}
-              playerState={playerState}
-              onUpdate={handlePurchase}
-            />
-          </div>
-        );
-      case "profile":
-        return (
-          <div className="flex-1 pb-20">
-            <div className="flex flex-col gap-4 p-4">
-              <div className="rounded-2xl border border-violet-500/20 bg-black/40 p-4 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                  {tgUser.photo_url ? (
-                    <img
-                      src={tgUser.photo_url}
-                      alt=""
-                      className="h-14 w-14 rounded-full object-cover ring-2 ring-violet-500/35"
-                    />
-                  ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-600/35 text-lg font-semibold text-violet-200">
-                      {(playerState.player.first_name?.[0] || tgUser.first_name?.[0] || "?")}
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-white">
-                      {playerState.player.first_name || tgUser.first_name || "Игрок"}
-                    </p>
-                    {(tgUser.username || playerState.player.username) && (
-                      <p className="text-xs text-zinc-500">
-                        @{(playerState.player.username || tgUser.username || "").replace(/^@/, "")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <DailyReward initData={initData} onUpdate={handleDailyReward} />
-              <AchievementsList initData={initData} playerState={playerState} onReward={handleDailyReward} />
-            </div>
-          </div>
-        );
-      case "top":
-        return (
-          <div className="flex-1 pb-20">
-            <div className="flex flex-col gap-3 p-4">
-              <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
-                <h3 className="mb-3 text-lg font-semibold text-white">🏆 Топ игроков</h3>
-                {lbLoading && <p className="text-center text-zinc-500">Загрузка рейтинга...</p>}
-                {leaderboard && (
-                  <div className="space-y-2">
-                    {leaderboard.results.map((row: any, idx: number) => (
-                      <div
-                        key={row.telegram_id}
-                        className={`flex items-center justify-between rounded-lg p-2 ${
-                          row.telegram_id === tgUser.id ? "bg-violet-500/20" : "bg-white/5"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 text-sm font-bold text-zinc-500">#{idx + 1}</span>
-                          <span className="text-white">{row.first_name || row.username || "Игрок"}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-cyan-400">{row.total_taps.toLocaleString()} тапов</p>
-                          <p className="text-xs text-zinc-500">{row.coins.toLocaleString()} 💰</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  const baseIcon = "🪙";
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-black">
-      {/* Верхняя панель с балансом */}
-      <div className="sticky top-0 z-10 border-b border-amber-800/30 bg-black/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">💎</span>
-            <div>
-              <p className="font-pixel text-[10px] text-amber-500/80">ХЕШ/СЕК</p>
-              <p className="font-pixel text-lg font-bold text-cyan-400">
-                {Math.floor(playerState.income_per_second).toLocaleString("ru-RU")}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-pixel text-[10px] text-amber-500/80">БАЛАНС</p>
-            <p className="font-pixel text-lg font-bold text-amber-300">
-              {Math.floor(playerState.player.coins).toLocaleString("ru-RU")}
-            </p>
-          </div>
+    <div className="flex h-full w-full flex-col items-center px-3 pb-6 pt-1">
+      {/* HUD сверху */}
+      <div className="flex flex-col items-center text-center">
+        <div className="flex items-baseline justify-center gap-2">
+          <span className="text-2xl leading-none text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]">
+            ◆
+          </span>
+          <p className="font-mono text-3xl font-bold leading-none tracking-tight text-cyan-100 drop-shadow-[0_0_14px_rgba(34,211,238,0.45)] sm:text-4xl">
+            {Math.floor(playerState.player.coins).toLocaleString("ru-RU")}
+          </p>
         </div>
+        <p className="font-mono mt-2 text-sm text-cyan-400/95">
+          +{playerState.income_per_second} хеш/сек
+        </p>
+        <p className="font-mono mt-1 text-[10px] uppercase tracking-wide text-white/40">
+          токены
+        </p>
       </div>
 
-      {/* Основной контент */}
-      {renderContent()}
+      <div className="flex-1" />
 
-      {/* Нижняя навигация в стиле капли Руперта */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-amber-800/30 bg-black/95 backdrop-blur-md">
-        <div className="flex justify-around py-2">
-          {[
-            { id: "shop", label: "Лаба", icon: "🔬" },
-            { id: "upgrades", label: "Антр.", icon: "⚡" },
-            { id: "game", label: "Капля", icon: "💧" },
-            { id: "profile", label: "Цели", icon: "🎯" },
-            { id: "prestige", label: "Закал.", icon: "🔥" },
-            { id: "top", label: "Топ", icon: "🏆" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => goTab(tab.id as DockTab)}
-              className={`tap-target flex flex-col items-center px-3 py-1 transition-all ${
-                dockTab === tab.id
-                  ? "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
-                  : "text-zinc-600 hover:text-zinc-400"
-              }`}
-            >
-              <span className="text-xl">{tab.icon}</span>
-              <span className="font-pixel text-[9px] uppercase tracking-wide">
-                {tab.label}
+      {/* Кнопка тапа */}
+      <div className="flex flex-col items-center">
+        <div className="relative">
+          <div className="absolute inset-[-20%] rounded-full bg-cyan-400/10 blur-2xl animate-tap-glow" />
+          <button
+            type="button"
+            onClick={handleTap}
+            className={`tap-target relative flex h-28 w-28 items-center justify-center rounded-full transition-transform active:scale-95 ${
+              isAnimating ? "scale-105" : ""
+            }`}
+          >
+            {!imgError && buttonImage ? (
+              <img
+                src={buttonImage}
+                alt="Tap"
+                className="h-full w-full object-contain"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span className="text-6xl">{baseIcon}</span>
+            )}
+            {isAnimating && (
+              <span className="font-mono animate-ripple pointer-events-none absolute text-lg font-bold text-white/90">
+                +{clickMultiplier}
               </span>
-            </button>
-          ))}
+            )}
+          </button>
         </div>
+
+        {clickMultiplier > 1 && (
+          <p className="font-mono mt-2 text-xs text-violet-300">✨ x{clickMultiplier} за тап</p>
+        )}
+
+        {pendingTapsRef.current > 0 && !isDev && (
+          <p className="font-mono mt-1 text-[10px] text-white/30">
+            синхр… +{pendingTapsRef.current} тап
+          </p>
+        )}
       </div>
     </div>
   );

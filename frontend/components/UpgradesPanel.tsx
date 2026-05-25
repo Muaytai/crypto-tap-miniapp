@@ -123,14 +123,14 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
 
   return (
     <div className="min-h-full bg-gradient-to-b from-[#0f0c0a] to-[#1a1510] px-3 pb-6">
-      <div className="border-b-2 border-amber-600/30 py-4 text-center">
-        <h1 className="font-mono text-2xl font-bold uppercase tracking-[0.15em] text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+      <div className="border-b-2 border-cyan-600/30 py-4 text-center">
+        <h1 className="font-mono text-2xl font-bold uppercase tracking-[0.15em] text-cyan-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">
           АПГРЕЙДЫ
         </h1>
       </div>
 
       {isDev && (
-        <div className="mt-2 text-center font-mono text-[10px] text-amber-600/60">
+        <div className="mt-2 text-center font-mono text-[10px] text-cyan-600/60">
           ⚡ DEV-режим: покупки локально
         </div>
       )}
@@ -154,15 +154,15 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
                 isPurchased
                   ? "border-green-500/30 bg-green-950/20 opacity-60"
                   : !unlocked
-                  ? "border-amber-800/20 bg-white/5 opacity-50"
-                  : "border-amber-700/30 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 hover:-translate-y-0.5"
+                  ? "border-cyan-800/20 bg-white/5 opacity-50"
+                  : "border-cyan-700/30 bg-white/5 hover:border-cyan-500/50 hover:bg-white/10 hover:-translate-y-0.5"
               }`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
-                    <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-amber-50">
+                    <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-cyan-50">
                       {upgrade.name}
                     </h3>
                   </div>
@@ -170,7 +170,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
                     {getUpgradeDescription(upgrade)}
                   </p>
                   {!unlocked && (
-                    <p className="mt-1 font-mono text-[9px] text-amber-600">
+                    <p className="mt-1 font-mono text-[9px] text-cyan-600">
                       {getLockReason(upgrade)}
                     </p>
                   )}
@@ -178,7 +178,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
 
                 <div className="flex flex-col items-end gap-2 min-w-[90px]">
                   {!isPurchased && (
-                    <div className="flex items-center gap-1 font-mono text-xs text-amber-500">
+                    <div className="flex items-center gap-1 font-mono text-xs text-cyan-500">
                       <span className="text-sm">⏱️</span>
                       <span className="font-bold">{upgrade.base_price.toLocaleString("ru-RU")}</span>
                     </div>
@@ -191,7 +191,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
                       disabled={loading === upgrade.id || !canBuy}
                       className={`font-mono text-[11px] px-3 py-1.5 rounded-md transition-all ${
                         canBuy
-                          ? "bg-gradient-to-b from-amber-600 to-orange-700 text-white shadow-md hover:scale-105 active:scale-95"
+                          ? "bg-gradient-to-b from-cyan-600 to-cyan-700 text-white shadow-md hover:scale-105 active:scale-95"
                           : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                       }`}
                     >

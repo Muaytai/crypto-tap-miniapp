@@ -210,13 +210,13 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
   return (
     <div className="flex h-full flex-col gap-4 bg-[#0f0c0a] px-4 pb-6">
-      <div className="border-b-2 border-amber-500/30 pb-2 pt-4 text-center">
-        <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-amber-500">МАГАЗИН</h1>
+      <div className="border-b-2 text-cyan-400/30 pb-2 pt-4 text-center">
+        <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-cyan-500">МАГАЗИН</h1>
       </div>
 
       {/* Кнопки кратности */}
-      <div className="flex items-center justify-center gap-3 rounded-lg bg-black/40 p-2">
-        <span className="font-pixel text-[0.7rem] text-amber-700">Кратность:</span>
+      <div className="flex items-center justify-center gap-3 rounded-lg bg-black/80 p-2">
+        <span className="font-pixel text-[0.7rem] text-cyan-700">Кратность:</span>
         <div className="flex gap-2">
           {[1, 10, 50].map((mult) => (
             <button
@@ -224,8 +224,8 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
               onClick={() => setSelectedMultiplier(mult as 1 | 10 | 50)}
               className={`tap-target rounded border-2 px-4 py-1 font-pixel text-sm transition hover:scale-[1.02] ${
                 currentMultiplier === mult
-                  ? "border-amber-500 bg-amber-500/20 text-amber-300"
-                  : "border-amber-700/50 text-amber-500/70 hover:border-amber-500/50"
+                  ? "text-cyan-400 bg-cyan-500/20 text-cyan-300"
+                  : "text-cyan-700/50 text-cyan-500/70 hover:border-cyan-500/50"
               }`}
             >
               x{mult}
@@ -242,7 +242,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
       {/* DEV-режим предупреждение */}
       {isDev && (
-        <div className="rounded border-2 border-amber-700/50 bg-amber-950/40 p-2 text-center font-pixel text-[10px] text-amber-300">
+        <div className="rounded border-2 border-cyan-700/50 bg-cyan-950/40 p-2 text-center font-pixel text-[10px] text-cyan-300">
           ⚡ DEV-режим: покупки работают локально
         </div>
       )}
@@ -264,15 +264,15 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           return (
             <div
               key={item.id}
-              className="rounded-xl border border-amber-500/20 bg-black/30 p-4 transition hover:border-amber-500/50 hover:bg-black/50"
+              className="rounded-xl border border-cyan-500/20 bg-black/80 p-4 transition hover:border-cyan-500/50 hover:bg-black/80"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-amber-500/30 bg-[rgba(20,20,30,0.6)]">
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)]">
                     <span className="text-2xl">{fallbackEmoji}</span>
                   </div>
                   <div>
-                    <h3 className="font-pixel text-base font-bold text-amber-100">{item.name}</h3>
+                    <h3 className="font-pixel text-base font-bold text-cyan-100">{item.name}</h3>
                     <p className="mt-1 font-pixel text-xs text-emerald-400">
                       +{item.base_income_per_second.toLocaleString("ru-RU")}/сек
                     </p>
@@ -280,7 +280,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                 </div>
 
                 <div className="flex min-w-[90px] flex-col items-end gap-2">
-                  <div className="flex items-center gap-1 font-pixel text-xs text-amber-500">
+                  <div className="flex items-center gap-1 font-pixel text-xs text-cyan-500">
                     <span>⏱️</span>
                     <span>{priceForSelected.toLocaleString("ru-RU")}</span>
                   </div>
@@ -289,7 +289,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                     disabled={loading === item.id || !canAfford}
                     className={`tap-target rounded-lg px-4 py-1.5 font-pixel text-[11px] transition ${
                       canAfford
-                        ? "bg-gradient-to-b from-amber-600 to-orange-700 text-white shadow-md hover:scale-105 active:scale-95"
+                        ? "bg-gradient-to-b from-cyan-600 to-cyan-700 text-white shadow-md hover:scale-105 active:scale-95"
                         : "cursor-not-allowed bg-zinc-700 text-zinc-500"
                     }`}
                   >
@@ -299,7 +299,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
               </div>
 
               <div className="mt-3 flex items-center gap-2">
-                <span className="font-pixel text-xs text-amber-500">Ур. {currentLevel}</span>
+                <span className="font-pixel text-xs text-cyan-500">Ур. {currentLevel}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${progressColor}`}

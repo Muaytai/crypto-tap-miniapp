@@ -153,7 +153,7 @@ export function LeaderboardPanel({ initData }: Props) {
   return (
     <div className="flex min-h-0 flex-1 flex-col pb-2">
       <div className="sticky top-0 z-20 shrink-0 bg-[#070b14]/92 px-3 pt-2 backdrop-blur-[8px]">
-        <p className="text-center font-pixel text-[10px] font-bold uppercase tracking-wider text-amber-200/50">
+        <p className="text-center font-pixel text-[10px] font-bold uppercase tracking-wider text-cyan-200/50">
           Crypto Tap
         </p>
         <CryptoTipBanner
@@ -163,7 +163,7 @@ export function LeaderboardPanel({ initData }: Props) {
       </div>
 
       <div className="min-h-0 flex-1 px-3 pb-2">
-        <h1 className="mb-3 mt-1 text-center font-pixel text-xl text-amber-50 sm:text-2xl">Рейтинг</h1>
+        <h1 className="mb-3 mt-1 text-center font-pixel text-xl text-cyan-50 sm:text-2xl">Рейтинг</h1>
         <div className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-[#101626]/80 to-[#0b0f1a]/70 p-2 shadow-[0_18px_50px_-25px_rgba(0,0,0,0.85)]">
           <div className="relative mb-3 flex shrink-0 rounded-[18px] bg-[rgba(10,16,32,0.75)] p-1 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
             {TABS.map((t) => {
@@ -176,7 +176,7 @@ export function LeaderboardPanel({ initData }: Props) {
                   className={`tap-target relative flex-1 rounded-[14px] px-2 py-2 text-center font-pixel text-[10px] transition sm:text-[11px] ${
                     on
                       ? "-mt-0.5 pb-3 text-white shadow-[0_10px_22px_-16px_rgba(56,189,248,0.7),inset_0_2px_0_rgba(255,255,255,0.12)] [background:linear-gradient(to_bottom,#0ea5e9,#075985)] after:absolute after:bottom-[-10px] after:left-[10px] after:right-[10px] after:h-[14px] after:rounded-b-full after:[background:linear-gradient(to_bottom,#075985,transparent)] after:[filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.35))]"
-                      : "text-amber-200/45 hover:text-amber-100/80"
+                      : "text-cyan-200/45 hover:text-cyan-100/80"
                   }`}
                 >
                   {t.icon ? `${t.icon} ` : ""}
@@ -189,8 +189,8 @@ export function LeaderboardPanel({ initData }: Props) {
           {meRank != null && totalPlayers > 0 && (
             <div className="mb-3 shrink-0 rounded-2xl border border-sky-400/20 bg-gradient-to-b from-sky-700/55 to-sky-900/35 px-3 py-3 text-center font-pixel text-[11px] text-sky-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:text-xs">
               Ваше место:{" "}
-              <span className="font-bold text-amber-300">#{meRank.toLocaleString("ru-RU")}</span> из{" "}
-              <span className="font-bold text-amber-300">{totalPlayers.toLocaleString("ru-RU")}</span>
+              <span className="font-bold text-cyan-300">#{meRank.toLocaleString("ru-RU")}</span> из{" "}
+              <span className="font-bold text-cyan-300">{totalPlayers.toLocaleString("ru-RU")}</span>
             </div>
           )}
 
@@ -212,7 +212,7 @@ export function LeaderboardPanel({ initData }: Props) {
                         key={`${row.telegram_id}-${row.rank}`}
                         className={`flex items-center gap-3 rounded-2xl px-2.5 py-2.5 sm:px-3 ${
                           isTop3
-                            ? "bg-gradient-to-b from-amber-500/10 via-[#1a1f2d]/70 to-[#101522]/70 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.22),0_10px_24px_-22px_rgba(251,191,36,0.55)]"
+                            ? "bg-gradient-to-b from-cyan-500/10 via-[#1a1f2d]/70 to-[#101522]/70 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.22),0_10px_24px_-22px_rgba(251,191,36,0.55)]"
                             : "bg-gradient-to-b from-[#1a1f2d]/70 to-[#101522]/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
                         }`}
                       >
@@ -240,7 +240,7 @@ export function LeaderboardPanel({ initData }: Props) {
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-white">{displayName(row)}</p>
                         </div>
-                        <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-amber-300 sm:text-sm">
+                        <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-cyan-300 sm:text-sm">
                           {formatScore(metric, row.score)}
                         </p>
                       </li>
@@ -257,13 +257,13 @@ export function LeaderboardPanel({ initData }: Props) {
                 <div className="flex w-10 shrink-0 justify-center text-center">
                   <span className="font-pixel text-[11px] text-sky-100">#{meRank.toLocaleString("ru-RU")}</span>
                 </div>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/65 to-orange-500/65 text-xs font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/65 to-cyan-500/65 text-xs font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]">
                   {(me.first_name?.trim()?.[0] || me.username?.trim()?.[0] || "?").toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-white">{me.username ? `@${me.username}` : me.first_name}</p>
                 </div>
-                <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-amber-300 sm:text-sm">
+                <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-cyan-300 sm:text-sm">
                   {formatScore(metric, meScore)}
                 </p>
               </div>
@@ -275,12 +275,12 @@ export function LeaderboardPanel({ initData }: Props) {
                   type="button"
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={pageClamped <= 0}
-                  className="tap-target rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
+                  className="tap-target rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
                   aria-label="Предыдущая страница"
                 >
                   ‹
                 </button>
-                <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-zinc-300">
+                <div className="rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-300">
                   стр. <span className="font-semibold text-white">{pageClamped + 1}</span> из{" "}
                   <span className="font-semibold text-white">{totalPages}</span>
                 </div>
@@ -288,7 +288,7 @@ export function LeaderboardPanel({ initData }: Props) {
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={pageClamped >= totalPages - 1}
-                  className="tap-target rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
+                  className="tap-target rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
                   aria-label="Следующая страница"
                 >
                   ›
