@@ -33,9 +33,7 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
   useEffect(() => {
     if (!isDev) return;
     const saved = localStorage.getItem("dev_panel_visible");
-    if (saved !== null) {
-      setPanelVisible(saved === "true");
-    }
+    if (saved !== null) setPanelVisible(saved === "true");
   }, [isDev]);
 
   const togglePanel = () => {
@@ -55,19 +53,13 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
       }
     }
     setBackgroundLevel(currentLevel);
-    const newImage = `/images/backgrounds/background_${currentLevel}.png`;
-    setBackgroundImage(newImage);
+    setBackgroundImage(`/images/backgrounds/background_${currentLevel}.png`);
     setImgError(false);
   }, [effectiveIncome]);
 
-  const getLevelThreshold = (level: number) => {
-    const found = BACKGROUND_LEVELS.find(l => l.level === level);
-    return found ? found.threshold.toLocaleString("ru-RU") : "0";
-  };
-
   return (
     <div
-      className="relative min-h-full w-full bg-cover bg-center bg-no-repeat transition-all duration-500"
+      className="relative h-full w-full bg-cover bg-center bg-no-repeat transition-all duration-500"
       style={{
         backgroundImage: imgError ? "none" : `url(${backgroundImage})`,
         backgroundColor: imgError ? "#1a1410" : undefined,
@@ -83,14 +75,14 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
           {/* Кнопка свернуть/развернуть */}
           <button
             onClick={togglePanel}
-            className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white hover:bg-amber-500"
+            className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white hover:bg-cyan-500"
           >
             {panelVisible ? "−" : "+"}
           </button>
 
           {panelVisible ? (
             <>
-              <p className="font-pixel text-[10px] text-amber-400">ТЕСТ ФОНОВ</p>
+              <p className="font-pixel text-[10px] text-cyan-400">ТЕСТ ФОНОВ</p>
               <div className="mt-2 flex items-center gap-2">
                 <span className="font-pixel text-xs text-white">
                   Доход: {effectiveIncome.toLocaleString("ru-RU")}/сек
@@ -102,7 +94,7 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
                   step="100"
                   value={testIncome}
                   onChange={(e) => setTestIncome(Number(e.target.value))}
-                  className="h-2 w-40 appearance-none rounded-lg bg-amber-700"
+                  className="h-2 w-40 appearance-none rounded-lg bg-zinc-700"
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-1">
@@ -112,7 +104,7 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
                     onClick={() => setTestIncome(level.threshold + (level.level === 1 ? 1 : 0))}
                     className={`rounded px-2 py-0.5 font-pixel text-[9px] ${
                       backgroundLevel === level.level
-                        ? "bg-amber-600 text-white"
+                        ? "bg-cyan-600 text-white"
                         : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                     }`}
                   >
@@ -126,7 +118,7 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false }: 
             </>
           ) : (
             <div className="flex items-center gap-1">
-              <span className="font-pixel text-[10px] text-amber-400">🎨</span>
+              <span className="font-pixel text-[10px] text-cyan-400">🎨</span>
               <span className="font-pixel text-[10px] text-white">Фон {backgroundLevel}/10</span>
             </div>
           )}

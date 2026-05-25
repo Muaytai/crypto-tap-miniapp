@@ -496,13 +496,13 @@ function DevHome() {
     if (activeTab === null) {
       return (
         <DynamicBackground incomePerSecond={playerState.income_per_second} isDev={true}>
-          <div className="relative flex min-h-full flex-1 flex-col">
+          <div className="flex h-full flex-col">
             <LabTopBar
               onOpenDaily={() => setDailyModalOpen(true)}
               onOpenSettings={() => setSettingsModalOpen(true)}
               showDailyBadge={dailyClaimable}
             />
-            <div className="relative flex flex-col">
+            <div className="flex flex-1 flex-col">
               <div className="px-2 pt-2">
                 <CryptoTipBanner seed={777} className="border-amber-900/25 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
