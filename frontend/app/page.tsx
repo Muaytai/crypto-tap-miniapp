@@ -99,15 +99,39 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
   };
 
   const labels: Record<DockTab, string> = {
-    lab: "Магазин",
-    upgrades: "Улучшения",
-    goals: "Достижения",
-    prestige: "Начать заново",
+    lab: "Лаба",
+    upgrades: "Апгр.",
+    goals: "Цели",
+    prestige: "Закал.",
     top: "Топ",
   };
 
+  const getIconClass = (tabId: DockTab, isActive: boolean): string => {
+    if (!isActive) return "nav-icon opacity-70";
+    switch (tabId) {
+      case "lab": return "nav-icon-lab-active";
+      case "upgrades": return "nav-icon-upgrades-active";
+      case "goals": return "nav-icon-goals-active";
+      case "prestige": return "nav-icon-prestige-active";
+      case "top": return "nav-icon-top-active";
+      default: return "nav-icon-active";
+    }
+  };
+
+  const getTextClass = (tabId: DockTab, isActive: boolean): string => {
+    if (!isActive) return "text-white/40";
+    switch (tabId) {
+      case "lab": return "text-cyan-400 drop-shadow-[0_0_6px_#06b6d4]";
+      case "upgrades": return "text-violet-400 drop-shadow-[0_0_6px_#8b5cf6]";
+      case "goals": return "text-blue-400 drop-shadow-[0_0_6px_#3b82f6]";
+      case "prestige": return "text-fuchsia-400 drop-shadow-[0_0_6px_#d946ef]";
+      case "top": return "text-cyan-400 drop-shadow-[0_0_6px_#06b6d4]";
+      default: return "text-white";
+    }
+  };
+
   return (
-    <nav className="z-30 shrink-0 border-t border-white/10 bg-black/60 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="z-30 shrink-0 border-t border-white/10 bg-black/40 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex justify-between gap-0.5 px-1 py-2">
         {DOCK.map((tab) => {
           const on = props.active === tab.id;
@@ -116,18 +140,20 @@ function BottomDock(props: { active: DockTab | null; onChange: (t: DockTab) => v
               key={tab.id}
               type="button"
               onClick={() => props.onChange(tab.id)}
-              className={`tap-target flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 transition-all ${
+              className={`tap-target flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 transition-all duration-200 ${
                 on
-                  ? "bg-white/10 text-cyan-400"
-                  : "text-white/40 hover:bg-white/5 hover:text-white/70"
+                  ? "bg-white/10 shadow-lg scale-105"
+                  : "hover:bg-white/5 hover:scale-105"
               }`}
             >
               <img
                 src={icons[tab.id]}
                 alt={labels[tab.id]}
-                className={`h-6 w-6 transition-all ${on ? "opacity-100" : "opacity-60"}`}
+                className={`h-6 w-6 transition-all duration-200 ${getIconClass(tab.id, on)}`}
               />
-              <span className="font-pixel text-[9px] uppercase tracking-wide">
+              <span
+                className={`font-pixel text-[9px] uppercase tracking-wide transition-all duration-200 ${getTextClass(tab.id, on)}`}
+              >
                 {labels[tab.id]}
               </span>
             </button>

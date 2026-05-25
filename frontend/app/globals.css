@@ -46,3 +46,36 @@ body {
 .font-pixel {
   font-family: 'Pixel', monospace;
 }
+
+
+
+
+
+
+
+
+
+
+
+/* Иконки в футере — делаем белыми через filter */
+.nav-icon {
+  filter: brightness(0) saturate(100%) invert(1);
+  transition: all 0.2s ease;
+}
+
+/* Неоновая подсветка для каждой кнопки */
+.nav-icon-lab-active {
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 0 6px #06b6d4);
+}
+.nav-icon-upgrades-active {
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 0 6px #8b5cf6);
+}
+.nav-icon-goals-active {
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 0 6px #3b82f6);
+}
+.nav-icon-prestige-active {
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 0 6px #d946ef);
+}
+.nav-icon-top-active {
+  filter: brightness(0) saturate(100%) invert(1) drop-shadow(0 0 6px #06b6d4);
+}
