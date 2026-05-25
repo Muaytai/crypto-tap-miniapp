@@ -358,6 +358,7 @@ export async function fetchAchievements(initData: string): Promise<{
     id: number;
     name: string;
     description: string;
+    icon_name?: string;
     trigger_type: string;
     trigger_value: number;
     reward_crystals: number;
@@ -367,7 +368,22 @@ export async function fetchAchievements(initData: string): Promise<{
   new_achievements: Array<any>;
 }> {
   if (isLocalDevMock(initData)) {
-    return { achievements: [], new_achievements: [] };
+    return fetchPublicJson(
+      "/api/test-list-achievements/?telegram_id=777",
+    ) as Promise<{
+      achievements: Array<{
+        id: number;
+        name: string;
+        description: string;
+        icon_name?: string;
+        trigger_type: string;
+        trigger_value: number;
+        reward_crystals: number;
+        reward_coins: number;
+        is_earned: boolean;
+      }>;
+      new_achievements: Array<unknown>;
+    }>;
   }
   return apiFetch("/api/achievements/", { initData }) as Promise<any>;
 }
@@ -387,21 +403,89 @@ export async function fetchCelestialUpgrades(initData: string): Promise<
     return [
       {
         id: 9001,
-        name: "Dev: множитель дохода",
-        description: "Локальный превью без бэкенда",
-        upgrade_type: "global_income",
-        value: 1.05,
+        name: "Крепкий старт",
+        description: "Начиная каждый цикл с 5,000 осколков",
+        upgrade_type: "start_boost",
+        value: 5000,
         price_crystals: 3,
-        max_level: 5,
+        max_level: 1,
       },
       {
         id: 9002,
-        name: "Dev: бонус к тапам",
-        description: "Локальный превью без бэкенда",
+        name: "Память мышц",
+        description: "Стартовый апгрейд «Крепкие пальцы» (+1 к клику)",
         upgrade_type: "tap_bonus",
-        value: 1.1,
+        value: 1,
         price_crystals: 5,
-        max_level: 5,
+        max_level: 1,
+      },
+      {
+        id: 9003,
+        name: "Кристальный резонанс",
+        description: "Бонус за алмазы: +7% вместо +5%",
+        upgrade_type: "global_income",
+        value: 1.04,
+        price_crystals: 10,
+        max_level: 1,
+      },
+      {
+        id: 9004,
+        name: "Усилитель связей",
+        description: "Бонус за друга: +15% вместо +10%",
+        upgrade_type: "referral_boost",
+        value: 1.05,
+        price_crystals: 20,
+        max_level: 1,
+      },
+      {
+        id: 9005,
+        name: "Мастер простоя",
+        description: "Пассивный доход: 70% первые 30 мин, 20% до 2ч (было 50%/10%)",
+        upgrade_type: "idle_master",
+        value: 1.4,
+        price_crystals: 25,
+        max_level: 1,
+        icon_name: "🌙",
+      },
+      {
+        id: 9006,
+        name: "Оптовая закупка",
+        description: "Все лаборатории на 10% дешевле",
+        upgrade_type: "lab_discount",
+        value: 0.9,
+        price_crystals: 35,
+        max_level: 1,
+        icon_name: "🏷️",
+      },
+      {
+        id: 9007,
+        name: "Ежедневная закалка",
+        description: "+1 алмаз за каждый день входа в игру",
+        upgrade_type: "daily_login_crystal",
+        value: 1,
+        price_crystals: 40,
+        max_level: 1,
+        icon_name: "📅",
+      },
+      {
+        id: 9008,
+        name: "Инерция закалки",
+        description: "После перезакалки начни с 5% от прошлого заработка",
+        upgrade_type: "prestige_inertia",
+        value: 0.05,
+        price_crystals: 60,
+        max_level: 1,
+        icon_name: "↻",
+      },
+      {
+        id: 9009,
+        name: "Квантовый резонанс",
+        description: "Удвоенный бонус алмазов",
+        upgrade_type: "quantum_resonance",
+        value: 2,
+        price_crystals: 80,
+        max_level: 1,
+        icon_name: "💠",
       },
     ];
   }
