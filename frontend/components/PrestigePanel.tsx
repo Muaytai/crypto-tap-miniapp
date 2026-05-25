@@ -1,3 +1,4 @@
+﻿
 "use client";
 
 import { useState, useEffect } from "react";
@@ -47,6 +48,17 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
     current_prestige_count: number;
     crystals: number;
   } | null>(null);
+
+  // Функция для получения иконки по типу апгрейда
+  const getIcon = (upgradeType: string) => {
+    switch (upgradeType) {
+      case "tap_bonus": return "👆";
+      case "offline_boost": return "⏰";
+      case "auto_tap": return "⚙️";
+      case "global_income":
+      default: return "💎";
+    }
+  };
 
   useEffect(() => {
     const loadStatusAndUpgrades = async () => {
@@ -177,7 +189,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
   return (
     <div className="flex flex-col gap-4 p-3">
       <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-sm text-cyan-200">
-        💡 Чем выше нагрузка, тем ценнее награда после перезакалки.
+        💡 Чем выше нагрузка, тем ценнее награда после перепрокачки.
       </div>
 
       <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-cyan-950/20 p-4">
@@ -326,16 +338,10 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
                     const price = upgrade.price_crystals * (currentLevel + 1);
                     const canAfford = status.crystals >= price;
 
-                    // Выбираем иконку по типу апгрейда
-                    const getIcon = () => {
-                      switch (upgrade.upgrade_type) {
-                        case "tap_bonus": return "👆";
-                        case "offline_boost": return "⏰";
-                        case "auto_tap": return "⚙️";
-                        case "global_income":
-                        default: return "💎";
-                      }
-                    };
+      {success && (
+        <div className="rounded-xl bg-emerald-500/20 p-3 text-sm text-emerald-300">{success}</div>
+      )}
+      {error && <div className="rounded-xl bg-red-500/20 p-3 text-sm text-red-300">{error}</div>}
 
                     return (
                       <div

@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * Вкладки как в референсе: Лаба (магазин), Апгр. (улучшения), Цели, Закал., Топ.
+ * Вкладки как в референсе: Лаба (магазин), Апгр. (улучшения), Цели, Эвол., Топ.
  * По умолчанию — главная страница с тапалкой (activeTab === null).
  * Повторное нажатие на активную кнопку закрывает меню.
  */
 import { useState, useEffect } from "react";
+import { DailyReward } from "@/components/DailyReward";
+import { AchievementsList } from "@/components/AchievementsList";
 import { SimpleTapGame } from "@/components/SimpleTapGame";
 import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
