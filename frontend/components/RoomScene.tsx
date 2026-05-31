@@ -9,7 +9,6 @@ type Props = {
   isAnimating: boolean;
 };
 
-// Пороги для дохода (персонаж, кнопка)
 const INCOME_LEVELS = [
   { threshold: 0, level: 1 },
   { threshold: 100, level: 2 },
@@ -33,21 +32,21 @@ function getLevelByIncome(income: number): number {
 export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: Props) {
   const incomeLevel = getLevelByIncome(playerState.income_per_second);
 
-  // Получаем уровни прокачиваемых предметов
   const getItemLevel = (itemId: number) => {
     return playerState.items.find(i => i.item_id === itemId)?.level || 1;
   };
 
-  const sofaLevel = getItemLevel(1);    // диван
-  const deskLevel = getItemLevel(2);    // стол
-  const laptopLevel = getItemLevel(3);  // ноутбук
-  const chairLevel = getItemLevel(4);   // стул
+  const sofaLevel = getItemLevel(1);
+  const deskLevel = getItemLevel(2);
+  const laptopLevel = getItemLevel(3);
+  const chairLevel = getItemLevel(4);
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    // Оставляем оригинальный прозрачный контейнер, чтобы был виден сквозной фон комнаты
+    <div className="relative h-full w-full overflow-hidden select-none">
 
-      {/* 1. ДИВАН (z-1) — у левой стены сзади */}
-      <div className="absolute left-0 bottom-24 w-1/2 max-w-[280px] z-[1]">
+      {/* 1. ДИВАН — у левой стены сзади */}
+      <div className="absolute left-[-5%] bottom-[16%] w-[55%] max-w-[300px] z-[1]">
         <img
           src={`/images/sofa/sofa_${sofaLevel}.png`}
           alt="Диван"
@@ -58,8 +57,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 2. СТОЛ (z-1) — с правой стороны сзади */}
-      <div className="absolute right-0 bottom-20 w-1/2 max-w-[280px] z-[1]">
+      {/* 2. СТОЛ — с правой стороны сзади */}
+      <div className="absolute right-[-5%] bottom-[12%] w-[55%] max-w-[320px] z-[2]">
         <img
           src={`/images/desk/desk_${deskLevel}.png`}
           alt="Стол"
@@ -70,8 +69,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 3. НОУТБУК/ПК (z-2) — на столе */}
-      <div className="absolute right-[6%] bottom-[32%] w-1/3 max-w-[140px] z-[2]">
+      {/* 3. ПК — на столе с правой стороны */}
+      <div className="absolute right-[5%] bottom-[26%] w-[35%] max-w-[180px] z-[3]">
         <img
           src={`/images/laptop/laptop_${laptopLevel}.png`}
           alt="Ноутбук"
@@ -82,8 +81,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 4. СТУЛ (z-3) — справа перед столом и ПК */}
-      <div className="absolute right-[12%] bottom-16 w-1/3 max-w-[140px] z-[3]">
+      {/* 4. СТУЛ — перед столом и ПК справа */}
+      <div className="absolute right-[12%] bottom-[10%] w-[28%] max-w-[130px] z-[4]">
         <img
           src={`/images/chair/chair_${chairLevel}.png`}
           alt="Стул"
@@ -94,8 +93,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 5. ПЕРСОНАЖ (z-4) — слева от стула (перед диваном) */}
-      <div className="absolute left-[20%] bottom-12 w-2/5 max-w-[200px] z-[4]">
+      {/* 5. ПЕРСОНАЖ — слева от стула (перед диваном) */}
+      <div className="absolute left-[18%] bottom-[14%] w-[45%] max-w-[220px] z-[5]">
         <img
           src={`/images/character/char_${incomeLevel}.png`}
           alt="Персонаж"
@@ -106,7 +105,7 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* КРАСИВЫЙ HUD (Интерфейс сверху) */}
+      {/* ОРИГИНАЛЬНЫЙ HUD БЕЗ ИЗМЕНЕНИЙ РАЗМЕРА */}
       <div className="absolute top-5 left-0 right-0 z-20 pointer-events-none">
         <div className="flex flex-col items-center text-center">
           <div className="flex items-baseline justify-center gap-2">
@@ -126,11 +125,11 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         </div>
       </div>
 
-      {/* 6. КНОПКА ТАПА (z-10) — уменьшена в 2 раза (h-32 w-32 вместо h-64 w-64) и прижата к футеру */}
+      {/* 6. КНОПКА ТАПА — уменьшена ровно в 2 раза, без лишних фонов, у самого футера */}
       <div className="absolute left-1/2 bottom-2 -translate-x-1/2 z-10">
         <button
           onClick={onTap}
-          className={`tap-target relative flex h-32 w-32 items-center justify-center rounded-full transition-transform active:scale-95 ${
+          className={`tap-target relative flex h-32 w-32 items-center justify-center transition-transform active:scale-95 ${
             isAnimating ? "scale-105" : ""
           }`}
         >
