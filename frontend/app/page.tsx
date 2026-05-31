@@ -5,10 +5,10 @@
  * По умолчанию — главная страница с тапалкой (activeTab === null).
  * Повторное нажатие на активную кнопку закрывает меню.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
-import { SimpleTapGame } from "@/components/SimpleTapGame";
+import { RoomScene } from "@/components/RoomScene";
 import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
 import { DailyRewardModal } from "@/components/DailyRewardModal";
@@ -19,7 +19,7 @@ import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
 import { DynamicBackground } from "@/components/DynamicBackground";
-import { fetchDailyRewardStatus, fetchFullState, type PlayerState } from "@/lib/api";
+import { fetchDailyRewardStatus, fetchFullState, syncTaps, type PlayerState } from "@/lib/api";
 import { watchTelegramInitData } from "@/lib/telegram";
 
 type DockTab = "lab" | "upgrades" | "goals" | "prestige" | "top";
@@ -174,6 +174,11 @@ export default function Home() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
+  // Тапы
+  const [clickMultiplier, setClickMultiplier] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const pendingTapsRef = useRef(0);
+
   useEffect(() => {
     return watchTelegramInitData((raw) => {
       setInitData(raw);
@@ -197,6 +202,19 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
+  // Обновляем множитель кликов из улучшений
+  useEffect(() => {
+    if (!playerState) return;
+    if (!initData || initData === "dev") {
+      const purchasedClickUpgrade = playerState.available_upgrades.find(
+        u => u.upgrade_type === "click_multiplier" &&
+        playerState.upgrades.some(pu => pu.upgrade_id === u.id)
+      );
+      setClickMultiplier(purchasedClickUpgrade?.value || 1);
+    }
+  }, [playerState, initData]);
+
+  // Глобальный таймер для пассивного дохода
   useEffect(() => {
     if (!playerState) return;
     if (playerState.income_per_second === 0) return;
@@ -241,6 +259,26 @@ export default function Home() {
       });
     }
   };
+
+  const handleTap = useCallback(() => {
+    pendingTapsRef.current += 1;
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 160);
+
+    if (playerState) {
+      setPlayerState(prev => prev ? {
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + clickMultiplier
+        }
+      } : null);
+    }
+
+    if (initData && initData !== "dev") {
+      syncTaps(initData, 1, 0).catch(console.error);
+    }
+  }, [clickMultiplier, playerState, initData]);
 
   if (!initData) {
     return <DevHome />;
@@ -320,7 +358,12 @@ export default function Home() {
                   className="border-white/10 bg-transparent px-1 py-1.5 shadow-none"
                 />
               </div>
-              <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
+              <RoomScene
+                playerState={playerState}
+                onTap={handleTap}
+                clickMultiplier={clickMultiplier}
+                isAnimating={isAnimating}
+              />
             </div>
           </div>
         </DynamicBackground>
@@ -451,6 +494,10 @@ function DevHome() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
+  const [clickMultiplier, setClickMultiplier] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const pendingTapsRef = useRef(0);
+
   useEffect(() => {
     if (playerState.income_per_second === 0) return;
 
@@ -472,6 +519,14 @@ function DevHome() {
       .then((s) => setDailyClaimable(s.can_claim))
       .catch(() => setDailyClaimable(false));
   }, [activeTab]);
+
+  useEffect(() => {
+    const purchasedClickUpgrade = playerState.available_upgrades.find(
+      u => u.upgrade_type === "click_multiplier" &&
+      playerState.upgrades.some(pu => pu.upgrade_id === u.id)
+    );
+    setClickMultiplier(purchasedClickUpgrade?.value || 1);
+  }, [playerState]);
 
   const handleTabChangeDev = (tabId: DockTab) => {
     if (activeTab === tabId) {
@@ -512,6 +567,22 @@ function DevHome() {
     }));
   };
 
+  const handleTapDev = useCallback(() => {
+    pendingTapsRef.current += 1;
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 160);
+
+    if (playerState) {
+      setPlayerState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + clickMultiplier
+        }
+      }));
+    }
+  }, [clickMultiplier, playerState]);
+
   const renderContent = () => {
     if (activeTab === null) {
       return (
@@ -530,7 +601,12 @@ function DevHome() {
               <div className="px-2 pt-2">
                 <CryptoTipBanner seed={777} className="border-white/10 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
-              <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
+              <RoomScene
+                playerState={playerState}
+                onTap={handleTapDev}
+                clickMultiplier={clickMultiplier}
+                isAnimating={isAnimating}
+              />
             </div>
           </div>
         </DynamicBackground>
