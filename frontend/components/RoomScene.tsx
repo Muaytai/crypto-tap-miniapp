@@ -42,11 +42,10 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
   const chairLevel = getItemLevel(4);
 
   return (
-    // Оставляем оригинальный прозрачный контейнер, чтобы был виден сквозной фон комнаты
     <div className="relative h-full w-full overflow-hidden select-none">
 
-      {/* 1. ДИВАН — у левой стены сзади */}
-      <div className="absolute left-[-5%] bottom-[16%] w-[55%] max-w-[300px] z-[1]">
+      {/* ДИВАН */}
+      <div className="absolute left-[-45%] bottom-[6%] w-[100%] max-w-[560px] z-[1]">
         <img
           src={`/images/sofa/sofa_${sofaLevel}.png`}
           alt="Диван"
@@ -57,8 +56,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 2. СТОЛ — с правой стороны сзади */}
-      <div className="absolute right-[-5%] bottom-[12%] w-[55%] max-w-[320px] z-[2]">
+      {/* СТОЛ */}
+      <div className="absolute right-[-5%] bottom-[15%] w-[100%] max-w-[320px] z-[2]">
         <img
           src={`/images/desk/desk_${deskLevel}.png`}
           alt="Стол"
@@ -69,8 +68,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 3. ПК — на столе с правой стороны */}
-      <div className="absolute right-[5%] bottom-[26%] w-[35%] max-w-[180px] z-[3]">
+      {/* ПК */}
+      <div className="absolute right-[5%] bottom-[29%] w-[35%] max-w-[180px] z-[3]">
         <img
           src={`/images/laptop/laptop_${laptopLevel}.png`}
           alt="Ноутбук"
@@ -81,8 +80,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 4. СТУЛ — перед столом и ПК справа */}
-      <div className="absolute right-[12%] bottom-[10%] w-[28%] max-w-[130px] z-[4]">
+      {/* СТУЛ */}
+      <div className="absolute right-[12%] bottom-[10%] w-[60%] max-w-[160px] z-[4]">
         <img
           src={`/images/chair/chair_${chairLevel}.png`}
           alt="Стул"
@@ -93,8 +92,8 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* 5. ПЕРСОНАЖ — слева от стула (перед диваном) */}
-      <div className="absolute left-[18%] bottom-[14%] w-[45%] max-w-[220px] z-[5]">
+      {/* ПЕРСОНАЖ */}
+      <div className="absolute left-[18%] bottom-[14%] w-[43%] max-w-[200px] z-[5]">
         <img
           src={`/images/character/char_${incomeLevel}.png`}
           alt="Персонаж"
@@ -105,7 +104,7 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         />
       </div>
 
-      {/* ОРИГИНАЛЬНЫЙ HUD БЕЗ ИЗМЕНЕНИЙ РАЗМЕРА */}
+      {/* HUD — без изменений */}
       <div className="absolute top-5 left-0 right-0 z-20 pointer-events-none">
         <div className="flex flex-col items-center text-center">
           <div className="flex items-baseline justify-center gap-2">
@@ -125,7 +124,7 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
         </div>
       </div>
 
-      {/* 6. КНОПКА ТАПА — уменьшена ровно в 2 раза, без лишних фонов, у самого футера */}
+      {/* КНОПКА ТАПА */}
       <div className="absolute left-1/2 bottom-2 -translate-x-1/2 z-10">
         <button
           onClick={onTap}
