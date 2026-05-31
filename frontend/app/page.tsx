@@ -336,7 +336,7 @@ export default function Home() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -374,7 +374,11 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex h-full flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex h-full flex-col overflow-hidden ${
+          activeTab === null || activeTab === "lab" || activeTab === "upgrades"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
+        }`}
       >
         <GameHeader playerState={playerState} />
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -547,7 +551,7 @@ function DevHome() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -585,7 +589,9 @@ function DevHome() {
     <MobileAppFrame>
       <div
         className={`flex h-full flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+          activeTab === "lab" || activeTab === "upgrades" || activeTab === "top"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
         }`}
       >
         <GameHeader playerState={playerState} />

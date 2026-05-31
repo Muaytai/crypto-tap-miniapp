@@ -164,26 +164,26 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   };
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-[#0f0c0a] to-[#1a1510] px-3 pb-6">
-      <div className="border-b-2 border-cyan-600/30 py-4 text-center">
-        <h1 className="font-mono text-2xl font-bold uppercase tracking-[0.15em] text-cyan-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">
-          АПГРЕЙДЫ
+    <div className="flex min-h-full flex-col gap-4 bg-[#0f0c0a] px-4 pb-6">
+      <div className="border-b-2 border-violet-400/30 pb-2 pt-4 text-center">
+        <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-violet-500 drop-shadow-[0_0_8px_#8b5cf6]">
+          УЛУЧШЕНИЯ
         </h1>
       </div>
 
-      {isDev && (
-        <div className="mt-2 text-center font-mono text-[10px] text-cyan-600/60">
-          ⚡ DEV-режим: покупки локально
-        </div>
-      )}
-
       {error && (
-        <div className="mt-3 border-2 border-red-700/50 bg-red-950/40 p-2 text-center font-mono text-[10px] text-red-200">
+        <div className="rounded border-2 border-red-700/50 bg-red-950/40 p-2 text-center font-pixel text-[10px] text-red-200">
           {error}
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-3">
+      {isDev && (
+        <div className="rounded border-2 border-violet-700/50 bg-violet-950/40 p-2 text-center font-pixel text-[10px] text-violet-300">
+          ⚡ DEV-режим: покупки работают локально
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
         {playerState.available_upgrades.map((upgrade) => {
           const isPurchased = purchasedUpgradeIds.has(upgrade.id);
           const unlocked = isUnlocked(upgrade);
@@ -192,47 +192,48 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
           return (
             <div
               key={upgrade.id}
-              className={`group rounded-xl border p-3 transition-all ${
+              className={`rounded-xl border p-4 transition ${
                 isPurchased
-                  ? "border-green-500/30 bg-green-950/20 opacity-60"
+                  ? "border-green-500/25 bg-black/80 opacity-60"
                   : !unlocked
-                    ? "border-cyan-800/20 bg-white/5 opacity-50"
-                    : "border-cyan-700/30 bg-white/5 hover:border-cyan-500/50 hover:bg-white/10 hover:-translate-y-0.5"
+                    ? "border-violet-500/10 bg-black/60 opacity-50"
+                    : "border-violet-500/20 bg-black/80 hover:border-violet-500/50"
               }`}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
-                    <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-cyan-50">
-                      {upgrade.name}
-                    </h3>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-violet-500/30 bg-[rgba(30,20,40,0.6)]">
+                    <span className="text-2xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
                   </div>
-                  <p className="mt-1 font-mono text-[11px] text-emerald-400/80">
-                    {getUpgradeDescription(upgrade)}
-                  </p>
-                  {!unlocked && (
-                    <p className="mt-1 font-mono text-[9px] text-cyan-600">{getLockReason(upgrade)}</p>
-                  )}
+                  <div>
+                    <h3 className="font-pixel text-base font-bold text-violet-100">{upgrade.name}</h3>
+                    <p className="mt-1 font-pixel text-xs text-violet-300/90">
+                      {getUpgradeDescription(upgrade)}
+                    </p>
+                    {!unlocked && (
+                      <p className="mt-1 font-pixel text-[10px] text-violet-500/80">{getLockReason(upgrade)}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex min-w-[90px] flex-col items-end gap-2">
                   {!isPurchased && (
-                    <div className="flex items-center gap-1 font-mono text-xs text-cyan-500">
-                      <span className="text-sm">⏱️</span>
-                      <span className="font-bold">{upgrade.base_price.toLocaleString("ru-RU")}</span>
+                    <div className="flex items-center gap-1 font-pixel text-xs text-violet-500">
+                      <span>⏱️</span>
+                      <span>{upgrade.base_price.toLocaleString("ru-RU")}</span>
                     </div>
                   )}
                   {isPurchased ? (
-                    <span className="font-mono text-[10px] text-green-500">✓ куплено</span>
+                    <span className="font-pixel text-[10px] text-green-500">✓ куплено</span>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => handleBuy(upgrade.id)}
                       disabled={loading === upgrade.id || !canBuy}
-                      className={`rounded-md px-3 py-1.5 font-mono text-[11px] transition-all ${
+                      className={`tap-target rounded-lg px-4 py-1.5 font-pixel text-[11px] transition ${
                         canBuy
-                          ? "bg-gradient-to-b from-cyan-600 to-cyan-700 text-white shadow-md hover:scale-105 active:scale-95"
-                          : "cursor-not-allowed bg-zinc-800 text-zinc-500"
+                          ? "bg-gradient-to-b from-violet-600 to-violet-700 text-white shadow-md hover:scale-105 active:scale-95"
+                          : "cursor-not-allowed bg-zinc-700 text-zinc-500"
                       }`}
                     >
                       {loading === upgrade.id ? "..." : "Купить"}
@@ -246,7 +247,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
       </div>
 
       {playerState.available_upgrades.length === 0 && (
-        <p className="mt-8 text-center font-mono text-xs text-zinc-500">Пока нет доступных улучшений</p>
+        <p className="py-8 text-center font-pixel text-xs text-zinc-500">Пока нет доступных улучшений</p>
       )}
     </div>
   );
