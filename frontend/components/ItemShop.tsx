@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { buyItem, type PlayerState } from "@/lib/api";
-import { cryptoItemVisual } from "@/lib/cryptoItemVisual";
 
 type Props = {
   initData: string;
@@ -10,35 +9,38 @@ type Props = {
   onPurchase: (newState: PlayerState) => void;
 };
 
-const COMPONENT_IDS = [1, 2, 3, 4];
+// Только эти компоненты показываем в магазине
+const COMPONENT_IDS = [1, 2, 3, 4]; // Диван, Стол, Ноутбук, Стул
 
 export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedMultiplier, setSelectedMultiplier] = useState<1 | 10 | 50>(1);
-  // Определяем, в dev-режиме ли мы
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const isDev = initData === "dev" || initData === "test_init_data";
 
+  // Фильтруем только нужные компоненты
   const shopItems = playerState.available_items.filter(item =>
     COMPONENT_IDS.includes(item.id)
   );
 
+  // Функция расчёта цены с удорожанием на 15% за каждую покупку
   const calculatePrice = (item: PlayerState["available_items"][0], currentQty: number, quantity: number): number => {
     let price = item.base_price;
     for (let i = 0; i < quantity; i++) {
+      // Увеличиваем цену на 15% за каждую купленную единицу
       price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
     }
     return price;
   };
 
   const getTotalUpgradesForLevel = (level: number): number => {
-    // Для уровня N нужно суммарно N*10 улучшений
     return level * 10;
   };
 
   const getProgress = (currentLevel: number, totalUpgrades: number): number => {
     const neededForNext = currentLevel * 10;
-    const alreadySpent = getTotalUpgradesForLevel(currentLevel - 1); // улучшения до этого уровня
+    const alreadySpent = getTotalUpgradesForLevel(currentLevel - 1);
     const currentInThisLevel = Math.max(0, totalUpgrades - alreadySpent);
     const progress = (currentInThisLevel / neededForNext) * 100;
     return Math.min(100, Math.max(0, progress));
@@ -50,12 +52,14 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return "bg-green-500";
   };
 
-  // ---- ОБРАБОТЧИК ПОКУПКИ (DEV + PROD) ----
+  const handleImageError = (itemId: number) => {
+    setImgErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
   const handleBuy = async (itemId: number, quantity: number) => {
     setLoading(itemId);
     setError(null);
 
-    // DEV-режим: имитируем покупку локально
     if (isDev) {
       const item = playerState.available_items.find(i => i.id === itemId);
       if (!item) {
@@ -68,6 +72,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       let currentQty = currentPlayerItem?.quantity || 0;
       let currentLevel = currentPlayerItem?.level || 1;
 
+      // Рассчитываем цену с учётом удорожания
       const price = calculatePrice(item, currentQty, quantity);
 
       if (playerState.player.coins < price) {
@@ -76,7 +81,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         return;
       }
 
-      // Имитируем успешную покупку
       setTimeout(() => {
         let remainingUpgrades = quantity;
         let newQty = currentQty;
@@ -95,11 +99,20 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         }
         newLevel = Math.min(newLevel, 10);
 
+        // Обновляем цену для следующей покупки (удорожание)
+        let nextPrice = item.base_price;
+        for (let j = 0; j < newQty; j++) {
+          nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
+        }
+
+        const updatedAvailableItems = playerState.available_items.map(i =>
+          i.id === itemId ? { ...i, base_price: nextPrice } : i
+        );
+
         const updatedItems = playerState.items.map(item =>
           item.item_id === itemId ? { ...item, quantity: newQty, level: newLevel } : item
         );
 
-        // Если предмета не было в списке, добавляем
         if (!playerState.items.some(i => i.item_id === itemId)) {
           updatedItems.push({
             item_id: itemId,
@@ -119,6 +132,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             coins: playerState.player.coins - price,
           },
           items: updatedItems,
+          available_items: updatedAvailableItems,
           income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
         };
 
@@ -145,7 +159,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           ),
           income_per_second: result.cached_income_per_second,
         };
-        // Если предмета не было в списке, добавляем
         if (!playerState.items.some(i => i.item_id === itemId)) {
           const newItem = {
             item_id: itemId,
@@ -184,7 +197,18 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
   const currentMultiplier = selectedMultiplier;
 
-  const getIcon = (itemName: string): string => {
+  // Получаем путь к картинке компонента по уровню
+  const getComponentImage = (itemName: string, level: number): string => {
+    const name = itemName.toLowerCase();
+    if (name.includes("диван")) return `/images/sofa/sofa_${level}.png`;
+    if (name.includes("стол")) return `/images/desk/desk_${level}.png`;
+    if (name.includes("ноутбук") || name.includes("компьютер")) return `/images/laptop/laptop_${level}.png`;
+    if (name.includes("стул")) return `/images/chair/chair_${level}.png`;
+    return `/images/items/${itemName}.png`;
+  };
+
+  // fallback эмодзи на случай ошибки
+  const getFallbackEmoji = (itemName: string): string => {
     if (itemName.includes("Диван")) return "🛋️";
     if (itemName.includes("Стол")) return "🪵";
     if (itemName.includes("Ноутбук") || itemName.includes("Компьютер")) return "💻";
@@ -198,7 +222,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-cyan-500">МАГАЗИН</h1>
       </div>
 
-      {/* Кнопки кратности */}
       <div className="flex items-center justify-center gap-3 rounded-lg bg-black/80 p-2">
         <span className="font-pixel text-[0.7rem] text-cyan-700">Кратность:</span>
         <div className="flex gap-2">
@@ -224,14 +247,12 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         </div>
       )}
 
-      {/* DEV-режим предупреждение */}
       {isDev && (
         <div className="rounded border-2 border-cyan-700/50 bg-cyan-950/40 p-2 text-center font-pixel text-[10px] text-cyan-300">
           ⚡ DEV-режим: покупки работают локально
         </div>
       )}
 
-      {/* Список предметов */}
       <div className="flex flex-col gap-4">
         {shopItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
@@ -244,6 +265,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
 
+          const imageUrl = getComponentImage(item.name, currentLevel);
+          const fallbackEmoji = getFallbackEmoji(item.name);
+          const hasError = imgErrors[item.id];
+
           return (
             <div
               key={item.id}
@@ -251,8 +276,17 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)]">
-                    <span className="text-2xl">{getIcon(item.name)}</span>
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)] overflow-hidden">
+                    {!hasError ? (
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="h-full w-full object-contain"
+                        onError={() => handleImageError(item.id)}
+                      />
+                    ) : (
+                      <span className="text-2xl">{fallbackEmoji}</span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-pixel text-base font-bold text-cyan-100">{item.name}</h3>

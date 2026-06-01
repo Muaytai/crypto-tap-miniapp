@@ -93,7 +93,7 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
       </div>
 
       {/* ПЕРСОНАЖ */}
-      <div className="absolute left-[18%] bottom-[14%] w-[43%] max-w-[200px] z-[5]">
+      <div className="absolute left-[18%] bottom-[14%] w-[40%] max-w-[200px] z-[5]">
         <img
           src={`/images/character/char_${incomeLevel}.png`}
           alt="Персонаж"
