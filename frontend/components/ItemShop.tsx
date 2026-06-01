@@ -10,6 +10,8 @@ type Props = {
   onPurchase: (newState: PlayerState) => void;
 };
 
+const COMPONENT_IDS = [1, 2, 3, 4];
+
 export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,10 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
   // Определяем, в dev-режиме ли мы
   const isDev = initData === "dev" || initData === "test_init_data";
 
-  // Функция для расчёта цены с учётом текущего количества и множителя
+  const shopItems = playerState.available_items.filter(item =>
+    COMPONENT_IDS.includes(item.id)
+  );
+
   const calculatePrice = (item: PlayerState["available_items"][0], currentQty: number, quantity: number): number => {
     let price = item.base_price;
     for (let i = 0; i < quantity; i++) {
@@ -26,17 +31,16 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return price;
   };
 
-  const getTotalUpgradesToLevel = (level: number): number => {
-    let total = 0;
-    for (let lvl = 1; lvl < level; lvl++) total += lvl * 10;
-    return total;
+  const getTotalUpgradesForLevel = (level: number): number => {
+    // Для уровня N нужно суммарно N*10 улучшений
+    return level * 10;
   };
 
   const getProgress = (currentLevel: number, totalUpgrades: number): number => {
     const neededForNext = currentLevel * 10;
-    const alreadySpent = getTotalUpgradesToLevel(currentLevel);
-    const currentLevelUpgrades = totalUpgrades - alreadySpent;
-    const progress = (currentLevelUpgrades / neededForNext) * 100;
+    const alreadySpent = getTotalUpgradesForLevel(currentLevel - 1); // улучшения до этого уровня
+    const currentInThisLevel = Math.max(0, totalUpgrades - alreadySpent);
+    const progress = (currentInThisLevel / neededForNext) * 100;
     return Math.min(100, Math.max(0, progress));
   };
 
@@ -80,23 +84,18 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
         while (remainingUpgrades > 0) {
           const neededForNext = newLevel * 10;
-          const alreadySpent = getTotalUpgradesToLevel(newLevel);
+          const alreadySpent = getTotalUpgradesForLevel(newLevel - 1);
           const currentInThisLevel = newQty - alreadySpent;
           const canTake = Math.min(remainingUpgrades, neededForNext - currentInThisLevel);
           newQty += canTake;
           remainingUpgrades -= canTake;
-          if (newQty >= alreadySpent + neededForNext) newLevel++;
+          if (newQty >= alreadySpent + neededForNext) {
+            newLevel++;
+          }
         }
+        newLevel = Math.min(newLevel, 10);
 
-        let nextPrice = item.base_price;
-        for (let j = 0; j < newQty; j++) {
-          nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
-        }
-        const updatedAvailableItems = playerState.available_items.map(i =>
-          i.id === itemId ? { ...i, base_price: nextPrice } : i
-        );
-
-        let updatedItems = playerState.items.map(item =>
+        const updatedItems = playerState.items.map(item =>
           item.item_id === itemId ? { ...item, quantity: newQty, level: newLevel } : item
         );
 
@@ -120,7 +119,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             coins: playerState.player.coins - price,
           },
           items: updatedItems,
-          available_items: updatedAvailableItems,
           income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
         };
 
@@ -184,27 +182,13 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return playerState.items.find(i => i.item_id === itemId)?.level || 1;
   };
 
-  const allItems = playerState.available_items;
   const currentMultiplier = selectedMultiplier;
 
-  const getFallbackEmoji = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes("gpu")) return "🖥️";
-    if (n.includes("asic")) return "⚙️";
-    if (n.includes("блок")) return "🔌";
-    if (n.includes("плоскогубцы")) return "🔧";
-    if (n.includes("молоток")) return "🔨";
-    if (n.includes("паяльник")) return "🛠️";
-    if (n.includes("комната")) return "🏠";
-    if (n.includes("персонаж")) return "🧑";
-    if (n.includes("кнопка")) return "🔘";
-    if (n.includes("стул")) return "🪑";
-    if (n.includes("стол")) return "📐";
-    if (n.includes("компьютер")) return "💻";
-    if (n.includes("кружка")) return "☕";
-    if (n.includes("ковёр")) return "🧶";
-    if (n.includes("картина")) return "🖼️";
-    if (n.includes("диван")) return "🛋️";
+  const getIcon = (itemName: string): string => {
+    if (itemName.includes("Диван")) return "🛋️";
+    if (itemName.includes("Стол")) return "🪵";
+    if (itemName.includes("Ноутбук") || itemName.includes("Компьютер")) return "💻";
+    if (itemName.includes("Стул")) return "🪑";
     return "📦";
   };
 
@@ -249,17 +233,16 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
       {/* Список предметов */}
       <div className="flex flex-col gap-4">
-        {allItems.map((item) => {
+        {shopItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
           const currentLevel = getCurrentLevel(item.id);
-          const upgradesNeededForNext = currentLevel * 10;
-          const alreadySpentTotal = getTotalUpgradesToLevel(currentLevel);
-          const progress = getProgress(currentLevel, currentQty);
+          const neededForNext = currentLevel * 10;
+          const alreadySpent = (currentLevel - 1) * 10;
+          const currentInThisLevel = Math.max(0, currentQty - alreadySpent);
+          const progress = (currentInThisLevel / neededForNext) * 100;
           const progressColor = getProgressColor(progress);
           const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
-
-          const fallbackEmoji = getFallbackEmoji(item.name);
 
           return (
             <div
@@ -269,7 +252,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)]">
-                    <span className="text-2xl">{fallbackEmoji}</span>
+                    <span className="text-2xl">{getIcon(item.name)}</span>
                   </div>
                   <div>
                     <h3 className="font-pixel text-base font-bold text-cyan-100">{item.name}</h3>
@@ -303,11 +286,11 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
-                    style={{ width: `${progress}%` }}
+                    style={{ width: `${Math.min(100, progress)}%` }}
                   />
                 </div>
                 <span className="font-pixel text-[10px] text-zinc-500">
-                  {currentQty - alreadySpentTotal}/{upgradesNeededForNext}
+                  {currentInThisLevel}/{neededForNext}
                 </span>
               </div>
             </div>
@@ -315,7 +298,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         })}
       </div>
 
-      {allItems.length === 0 && (
+      {shopItems.length === 0 && (
         <p className="py-8 text-center font-pixel text-xs text-zinc-500">Магазин пуст</p>
       )}
     </div>

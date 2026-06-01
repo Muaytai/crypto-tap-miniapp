@@ -7,7 +7,9 @@ type Props = {
   incomePerSecond: number;
   children?: React.ReactNode;
   isDev?: boolean;
-  onIncomeChange?: (newIncome: number) => void; // колбэк для изменения дохода
+  onIncomeChange?: (newIncome: number) => void;
+  onComponentUpgrade?: (itemId: number, delta: number) => void;
+  playerState?: PlayerState | null;
 };
 
 const BACKGROUND_LEVELS = [
@@ -23,12 +25,27 @@ const BACKGROUND_LEVELS = [
   { threshold: 10000000000, level: 10, name: "background_10" },
 ];
 
-export function DynamicBackground({ incomePerSecond, children, isDev = false, onIncomeChange }: Props) {
+const COMPONENTS = [
+  { id: 1, name: "Диван", icon: "🛋️" },
+  { id: 2, name: "Стол", icon: "🪵" },
+  { id: 3, name: "Ноутбук", icon: "💻" },
+  { id: 4, name: "Стул", icon: "🪑" },
+];
+
+export function DynamicBackground({
+  incomePerSecond,
+  children,
+  isDev = false,
+  onIncomeChange,
+  onComponentUpgrade,
+  playerState
+}: Props) {
   const [backgroundLevel, setBackgroundLevel] = useState(1);
   const [backgroundImage, setBackgroundImage] = useState("/images/backgrounds/background_1.png");
   const [imgError, setImgError] = useState(false);
   const [testIncome, setTestIncome] = useState(incomePerSecond);
   const [panelVisible, setPanelVisible] = useState(true);
+  const [showComponentPanel, setShowComponentPanel] = useState(false);
 
   // Сохраняем состояние панели
   useEffect(() => {
@@ -71,6 +88,10 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false, on
     return num.toString();
   };
 
+  const getComponentLevel = (itemId: number): number => {
+    return playerState?.items.find(i => i.item_id === itemId)?.level || 1;
+  };
+
   return (
     <div
       className="relative h-full w-full bg-cover bg-center bg-no-repeat transition-all duration-500"
@@ -81,77 +102,131 @@ export function DynamicBackground({ incomePerSecond, children, isDev = false, on
     >
       {/* DEV-контроллер */}
       {isDev && (
-        <div
-          className={`fixed bottom-20 left-2 z-50 rounded-xl bg-black/90 backdrop-blur-md transition-all duration-300 ${
-            panelVisible ? "p-3" : "p-2"
-          }`}
-          style={{ width: panelVisible ? "260px" : "auto" }}
-        >
-          <button
-            onClick={togglePanel}
-            className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white hover:bg-cyan-500"
+        <>
+          {/* Основная панель дохода */}
+          <div
+            className={`fixed bottom-20 left-2 z-50 rounded-xl bg-black/90 backdrop-blur-md transition-all duration-300 ${
+              panelVisible ? "p-3" : "p-2"
+            }`}
+            style={{ width: panelVisible ? "260px" : "auto" }}
           >
-            {panelVisible ? "−" : "+"}
-          </button>
+            <button
+              onClick={togglePanel}
+              className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white hover:bg-cyan-500"
+            >
+              {panelVisible ? "−" : "+"}
+            </button>
 
-          {panelVisible ? (
-            <>
-              <p className="font-pixel text-[10px] text-cyan-400 mb-2">DEV: ТЕСТ ДОХОДА</p>
+            {panelVisible ? (
+              <>
+                <p className="font-pixel text-[10px] text-cyan-400 mb-2">DEV: ТЕСТ ДОХОДА</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-pixel text-[9px] text-white/60 w-12">0</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000000000"
+                    step="100"
+                    value={testIncome}
+                    onChange={(e) => applyTestIncome(Number(e.target.value))}
+                    className="h-2 rounded-lg appearance-none bg-zinc-700 flex-1"
+                    style={{ width: "140px" }}
+                  />
+                  <span className="font-pixel text-[9px] text-white/60 w-12 text-right">10B</span>
+                </div>
+                <div className="mt-2 text-center">
+                  <span className="font-pixel text-[11px] text-cyan-400">
+                    {formatNumber(testIncome)} / сек
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1 justify-center">
+                  {BACKGROUND_LEVELS.map((level) => (
+                    <button
+                      key={level.level}
+                      onClick={() => applyTestIncome(level.threshold + (level.level === 1 ? 1 : 0))}
+                      className={`rounded px-2 py-0.5 font-pixel text-[9px] transition ${
+                        backgroundLevel === level.level
+                          ? "bg-cyan-600 text-white"
+                          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                      }`}
+                    >
+                      {level.level}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-center font-pixel text-[8px] text-zinc-500">
+                  Фон: {backgroundLevel}/10
+                </p>
 
-              {/* Ползунок с фиксированной шириной */}
-              <div className="flex items-center gap-2">
-                <span className="font-pixel text-[9px] text-white/60 w-12">0</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="10000000000"
-                  step="100"
-                  value={testIncome}
-                  onChange={(e) => applyTestIncome(Number(e.target.value))}
-                  className="h-2 rounded-lg appearance-none bg-zinc-700 flex-1"
-                  style={{ width: "140px" }}
-                />
-                <span className="font-pixel text-[9px] text-white/60 w-12 text-right">10B</span>
-              </div>
-
-              {/* Текущее значение */}
-              <div className="mt-2 text-center">
-                <span className="font-pixel text-[11px] text-cyan-400">
-                  {formatNumber(testIncome)} / сек
+                {/* Кнопка переключения на панель компонентов */}
+                <button
+                  onClick={() => setShowComponentPanel(!showComponentPanel)}
+                  className="mt-3 w-full rounded bg-purple-600/50 px-2 py-1 font-pixel text-[9px] text-white hover:bg-purple-600"
+                >
+                  {showComponentPanel ? "▲ Скрыть компоненты" : "▼ Тест компонентов"}
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-1">
+                <span className="font-pixel text-[10px] text-cyan-400">🎨</span>
+                <span className="font-pixel text-[10px] text-white">Фон {backgroundLevel}/10</span>
+                <span className="font-pixel text-[9px] text-zinc-500 ml-1">
+                  ({formatNumber(incomePerSecond)}/с)
                 </span>
               </div>
+            )}
+          </div>
 
-              {/* Кнопки уровней фона */}
-              <div className="mt-2 flex flex-wrap gap-1 justify-center">
-                {BACKGROUND_LEVELS.map((level) => (
-                  <button
-                    key={level.level}
-                    onClick={() => applyTestIncome(level.threshold + (level.level === 1 ? 1 : 0))}
-                    className={`rounded px-2 py-0.5 font-pixel text-[9px] transition ${
-                      backgroundLevel === level.level
-                        ? "bg-cyan-600 text-white"
-                        : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                    }`}
-                  >
-                    {level.level}
-                  </button>
-                ))}
-              </div>
-
-              <p className="mt-2 text-center font-pixel text-[8px] text-zinc-500">
-                Фон: {backgroundLevel}/10
+          {/* Панель прокачки компонентов */}
+          {showComponentPanel && (
+            <div className="fixed bottom-20 left-[270px] z-50 rounded-xl bg-black/90 backdrop-blur-md p-3 w-56">
+              <p className="font-pixel text-[10px] text-purple-400 mb-2 text-center">
+                ТЕСТ КОМНАТЫ (визуал)
               </p>
-            </>
-          ) : (
-            <div className="flex items-center gap-1">
-              <span className="font-pixel text-[10px] text-cyan-400">🎨</span>
-              <span className="font-pixel text-[10px] text-white">Фон {backgroundLevel}/10</span>
-              <span className="font-pixel text-[9px] text-zinc-500 ml-1">
-                ({formatNumber(incomePerSecond)}/с)
-              </span>
+              {COMPONENTS.map((comp) => {
+                const currentLevel = getComponentLevel(comp.id);
+                return (
+                  <div key={comp.id} className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm">{comp.icon}</span>
+                      <span className="font-pixel text-[9px] text-white">{comp.name}</span>
+                      <span className="font-pixel text-[8px] text-purple-400 ml-1">
+                        Ур.{currentLevel}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => onComponentUpgrade?.(comp.id, -1)}
+                        disabled={currentLevel <= 1}
+                        className={`px-2 py-0.5 rounded text-[10px] font-pixel text-white ${
+                          currentLevel <= 1
+                            ? "bg-zinc-700 cursor-not-allowed opacity-50"
+                            : "bg-red-600 hover:bg-red-500"
+                        }`}
+                      >
+                        −1 ур.
+                      </button>
+                      <button
+                        onClick={() => onComponentUpgrade?.(comp.id, 1)}
+                        disabled={currentLevel >= 10}
+                        className={`px-2 py-0.5 rounded text-[10px] font-pixel text-white ${
+                          currentLevel >= 10
+                            ? "bg-zinc-700 cursor-not-allowed opacity-50"
+                            : "bg-green-600 hover:bg-green-500"
+                        }`}
+                      >
+                        +1 ур.
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-center font-pixel text-[7px] text-zinc-500 mt-2">
+                Меняет только визуал (уровень), не влияет на покупки
+              </p>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {children}

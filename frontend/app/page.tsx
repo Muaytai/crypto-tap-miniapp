@@ -260,6 +260,43 @@ export default function Home() {
     }
   };
 
+  const handleComponentUpgrade = (itemId: number, delta: number) => {
+    if (!playerState) return;
+
+    const item = playerState.available_items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentItem = playerState.items.find(i => i.item_id === itemId);
+    const currentLevel = currentItem?.level || 1;
+
+    const newLevel = Math.min(10, Math.max(1, currentLevel + delta));
+    if (newLevel === currentLevel) return;
+
+    const updatedItems = [...playerState.items];
+    const existingIndex = updatedItems.findIndex(i => i.item_id === itemId);
+    const simulatedQuantity = newLevel * 10;
+
+    if (existingIndex >= 0) {
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        level: newLevel,
+        quantity: simulatedQuantity
+      };
+    } else {
+      updatedItems.push({
+        item_id: itemId,
+        item_name: item.name,
+        item_icon: item.icon_name || "",
+        quantity: simulatedQuantity,
+        level: newLevel,
+        item_base_income: item.base_income_per_second,
+        item_base_price: item.base_price,
+      });
+    }
+
+    setPlayerState({ ...playerState, items: updatedItems });
+  };
+
   const handleTap = useCallback(() => {
     pendingTapsRef.current += 1;
     setIsAnimating(true);
@@ -344,6 +381,8 @@ export default function Home() {
           incomePerSecond={playerState.income_per_second}
           isDev={!initData}
           onIncomeChange={handleIncomeChange}
+          onComponentUpgrade={handleComponentUpgrade}
+          playerState={playerState}
         >
           <div className="relative flex h-full flex-col">
             <LabTopBar
@@ -459,22 +498,10 @@ function DevHome() {
     items: [],
     upgrades: [],
     available_items: [
-      { id: 100, name: "Комната", base_income_per_second: 10, base_price: 100, icon_name: "" },
-      { id: 101, name: "Персонаж", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 102, name: "Кнопка", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120, icon_name: "" },
-      { id: 16, name: "Плоскогубцы", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 17, name: "Молоток", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 18, name: "Паяльник", base_income_per_second: 25, base_price: 250, icon_name: "" },
-      { id: 103, name: "Стул", base_income_per_second: 3, base_price: 30, icon_name: "" },
-      { id: 104, name: "Стол", base_income_per_second: 4, base_price: 40, icon_name: "" },
-      { id: 105, name: "Компьютер", base_income_per_second: 8, base_price: 80, icon_name: "" },
-      { id: 106, name: "Кружка", base_income_per_second: 2, base_price: 20, icon_name: "" },
-      { id: 107, name: "Ковёр", base_income_per_second: 3, base_price: 30, icon_name: "" },
-      { id: 108, name: "Картина", base_income_per_second: 2, base_price: 20, icon_name: "" },
-      { id: 109, name: "Диван", base_income_per_second: 6, base_price: 60, icon_name: "" },
+      { id: 1, name: "Диван", base_income_per_second: 2, base_price: 100, icon_name: "sofa" },
+      { id: 2, name: "Стол", base_income_per_second: 3, base_price: 150, icon_name: "desk" },
+      { id: 3, name: "Ноутбук", base_income_per_second: 4, base_price: 200, icon_name: "laptop" },
+      { id: 4, name: "Стул", base_income_per_second: 1, base_price: 50, icon_name: "chair" },
     ],
     available_upgrades: [
       {
@@ -567,6 +594,41 @@ function DevHome() {
     }));
   };
 
+  const handleComponentUpgradeDev = (itemId: number, delta: number) => {
+    const item = playerState.available_items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentItem = playerState.items.find(i => i.item_id === itemId);
+    const currentLevel = currentItem?.level || 1;
+
+    const newLevel = Math.min(10, Math.max(1, currentLevel + delta));
+    if (newLevel === currentLevel) return;
+
+    const updatedItems = [...playerState.items];
+    const existingIndex = updatedItems.findIndex(i => i.item_id === itemId);
+    const simulatedQuantity = newLevel * 10;
+
+    if (existingIndex >= 0) {
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        level: newLevel,
+        quantity: simulatedQuantity
+      };
+    } else {
+      updatedItems.push({
+        item_id: itemId,
+        item_name: item.name,
+        item_icon: item.icon_name || "",
+        quantity: simulatedQuantity,
+        level: newLevel,
+        item_base_income: item.base_income_per_second,
+        item_base_price: item.base_price,
+      });
+    }
+
+    setPlayerState({ ...playerState, items: updatedItems });
+  };
+
   const handleTapDev = useCallback(() => {
     pendingTapsRef.current += 1;
     setIsAnimating(true);
@@ -590,6 +652,8 @@ function DevHome() {
           incomePerSecond={playerState.income_per_second}
           isDev={true}
           onIncomeChange={handleIncomeChangeDev}
+          onComponentUpgrade={handleComponentUpgradeDev}
+          playerState={playerState}
         >
           <div className="flex h-full flex-col">
             <LabTopBar
