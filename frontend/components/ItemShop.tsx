@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { buyItem, type PlayerState } from "@/lib/api";
-import { cryptoItemVisual } from "@/lib/cryptoItemVisual";
 
 type Props = {
   initData: string;
@@ -10,33 +9,40 @@ type Props = {
   onPurchase: (newState: PlayerState) => void;
 };
 
+// Только эти компоненты показываем в магазине
+const COMPONENT_IDS = [1, 2, 3, 4]; // Диван, Стол, Ноутбук, Стул
+
 export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedMultiplier, setSelectedMultiplier] = useState<1 | 10 | 50>(1);
-  // Определяем, в dev-режиме ли мы
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const isDev = initData === "dev" || initData === "test_init_data";
 
-  // Функция для расчёта цены с учётом текущего количества и множителя
+  // Фильтруем только нужные компоненты
+  const shopItems = playerState.available_items.filter(item =>
+    COMPONENT_IDS.includes(item.id)
+  );
+
+  // Функция расчёта цены с удорожанием на 15% за каждую покупку
   const calculatePrice = (item: PlayerState["available_items"][0], currentQty: number, quantity: number): number => {
     let price = item.base_price;
     for (let i = 0; i < quantity; i++) {
+      // Увеличиваем цену на 15% за каждую купленную единицу
       price = Math.floor(price * (currentQty + i > 0 ? 1.15 : 1));
     }
     return price;
   };
 
-  const getTotalUpgradesToLevel = (level: number): number => {
-    let total = 0;
-    for (let lvl = 1; lvl < level; lvl++) total += lvl * 10;
-    return total;
+  const getTotalUpgradesForLevel = (level: number): number => {
+    return level * 10;
   };
 
   const getProgress = (currentLevel: number, totalUpgrades: number): number => {
     const neededForNext = currentLevel * 10;
-    const alreadySpent = getTotalUpgradesToLevel(currentLevel);
-    const currentLevelUpgrades = totalUpgrades - alreadySpent;
-    const progress = (currentLevelUpgrades / neededForNext) * 100;
+    const alreadySpent = getTotalUpgradesForLevel(currentLevel - 1);
+    const currentInThisLevel = Math.max(0, totalUpgrades - alreadySpent);
+    const progress = (currentInThisLevel / neededForNext) * 100;
     return Math.min(100, Math.max(0, progress));
   };
 
@@ -46,12 +52,14 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return "bg-green-500";
   };
 
-  // ---- ОБРАБОТЧИК ПОКУПКИ (DEV + PROD) ----
+  const handleImageError = (itemId: number) => {
+    setImgErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
   const handleBuy = async (itemId: number, quantity: number) => {
     setLoading(itemId);
     setError(null);
 
-    // DEV-режим: имитируем покупку локально
     if (isDev) {
       const item = playerState.available_items.find(i => i.id === itemId);
       if (!item) {
@@ -64,6 +72,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       let currentQty = currentPlayerItem?.quantity || 0;
       let currentLevel = currentPlayerItem?.level || 1;
 
+      // Рассчитываем цену с учётом удорожания
       const price = calculatePrice(item, currentQty, quantity);
 
       if (playerState.player.coins < price) {
@@ -72,7 +81,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         return;
       }
 
-      // Имитируем успешную покупку
       setTimeout(() => {
         let remainingUpgrades = quantity;
         let newQty = currentQty;
@@ -80,27 +88,31 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
         while (remainingUpgrades > 0) {
           const neededForNext = newLevel * 10;
-          const alreadySpent = getTotalUpgradesToLevel(newLevel);
+          const alreadySpent = getTotalUpgradesForLevel(newLevel - 1);
           const currentInThisLevel = newQty - alreadySpent;
           const canTake = Math.min(remainingUpgrades, neededForNext - currentInThisLevel);
           newQty += canTake;
           remainingUpgrades -= canTake;
-          if (newQty >= alreadySpent + neededForNext) newLevel++;
+          if (newQty >= alreadySpent + neededForNext) {
+            newLevel++;
+          }
         }
+        newLevel = Math.min(newLevel, 10);
 
+        // Обновляем цену для следующей покупки (удорожание)
         let nextPrice = item.base_price;
         for (let j = 0; j < newQty; j++) {
           nextPrice = Math.floor(nextPrice * (j > 0 ? 1.15 : 1));
         }
+
         const updatedAvailableItems = playerState.available_items.map(i =>
           i.id === itemId ? { ...i, base_price: nextPrice } : i
         );
 
-        let updatedItems = playerState.items.map(item =>
+        const updatedItems = playerState.items.map(item =>
           item.item_id === itemId ? { ...item, quantity: newQty, level: newLevel } : item
         );
 
-        // Если предмета не было в списке, добавляем
         if (!playerState.items.some(i => i.item_id === itemId)) {
           updatedItems.push({
             item_id: itemId,
@@ -147,7 +159,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           ),
           income_per_second: result.cached_income_per_second,
         };
-        // Если предмета не было в списке, добавляем
         if (!playerState.items.some(i => i.item_id === itemId)) {
           const newItem = {
             item_id: itemId,
@@ -184,27 +195,24 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return playerState.items.find(i => i.item_id === itemId)?.level || 1;
   };
 
-  const allItems = playerState.available_items;
   const currentMultiplier = selectedMultiplier;
 
-  const getFallbackEmoji = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes("gpu")) return "🖥️";
-    if (n.includes("asic")) return "⚙️";
-    if (n.includes("блок")) return "🔌";
-    if (n.includes("плоскогубцы")) return "🔧";
-    if (n.includes("молоток")) return "🔨";
-    if (n.includes("паяльник")) return "🛠️";
-    if (n.includes("комната")) return "🏠";
-    if (n.includes("персонаж")) return "🧑";
-    if (n.includes("кнопка")) return "🔘";
-    if (n.includes("стул")) return "🪑";
-    if (n.includes("стол")) return "📐";
-    if (n.includes("компьютер")) return "💻";
-    if (n.includes("кружка")) return "☕";
-    if (n.includes("ковёр")) return "🧶";
-    if (n.includes("картина")) return "🖼️";
-    if (n.includes("диван")) return "🛋️";
+  // Получаем путь к картинке компонента по уровню
+  const getComponentImage = (itemName: string, level: number): string => {
+    const name = itemName.toLowerCase();
+    if (name.includes("диван")) return `/images/sofa/sofa_${level}.png`;
+    if (name.includes("стол")) return `/images/desk/desk_${level}.png`;
+    if (name.includes("ноутбук") || name.includes("компьютер")) return `/images/laptop/laptop_${level}.png`;
+    if (name.includes("стул")) return `/images/chair/chair_${level}.png`;
+    return `/images/items/${itemName}.png`;
+  };
+
+  // fallback эмодзи на случай ошибки
+  const getFallbackEmoji = (itemName: string): string => {
+    if (itemName.includes("Диван")) return "🛋️";
+    if (itemName.includes("Стол")) return "🪵";
+    if (itemName.includes("Ноутбук") || itemName.includes("Компьютер")) return "💻";
+    if (itemName.includes("Стул")) return "🪑";
     return "📦";
   };
 
@@ -214,7 +222,6 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         <h1 className="font-pixel text-2xl font-bold tracking-[0.2em] text-cyan-500">МАГАЗИН</h1>
       </div>
 
-      {/* Кнопки кратности */}
       <div className="flex items-center justify-center gap-3 rounded-lg bg-black/80 p-2">
         <span className="font-pixel text-[0.7rem] text-cyan-700">Кратность:</span>
         <div className="flex gap-2">
@@ -240,26 +247,27 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         </div>
       )}
 
-      {/* DEV-режим предупреждение */}
       {isDev && (
         <div className="rounded border-2 border-cyan-700/50 bg-cyan-950/40 p-2 text-center font-pixel text-[10px] text-cyan-300">
           ⚡ DEV-режим: покупки работают локально
         </div>
       )}
 
-      {/* Список предметов */}
       <div className="flex flex-col gap-4">
-        {allItems.map((item) => {
+        {shopItems.map((item) => {
           const currentQty = getCurrentQuantity(item.id);
           const currentLevel = getCurrentLevel(item.id);
-          const upgradesNeededForNext = currentLevel * 10;
-          const alreadySpentTotal = getTotalUpgradesToLevel(currentLevel);
-          const progress = getProgress(currentLevel, currentQty);
+          const neededForNext = currentLevel * 10;
+          const alreadySpent = (currentLevel - 1) * 10;
+          const currentInThisLevel = Math.max(0, currentQty - alreadySpent);
+          const progress = (currentInThisLevel / neededForNext) * 100;
           const progressColor = getProgressColor(progress);
           const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
 
+          const imageUrl = getComponentImage(item.name, currentLevel);
           const fallbackEmoji = getFallbackEmoji(item.name);
+          const hasError = imgErrors[item.id];
 
           return (
             <div
@@ -268,8 +276,17 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)]">
-                    <span className="text-2xl">{fallbackEmoji}</span>
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-cyan-500/30 bg-[rgba(20,20,30,0.6)] overflow-hidden">
+                    {!hasError ? (
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="h-full w-full object-contain"
+                        onError={() => handleImageError(item.id)}
+                      />
+                    ) : (
+                      <span className="text-2xl">{fallbackEmoji}</span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-pixel text-base font-bold text-cyan-100">{item.name}</h3>
@@ -303,11 +320,11 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
-                    style={{ width: `${progress}%` }}
+                    style={{ width: `${Math.min(100, progress)}%` }}
                   />
                 </div>
                 <span className="font-pixel text-[10px] text-zinc-500">
-                  {currentQty - alreadySpentTotal}/{upgradesNeededForNext}
+                  {currentInThisLevel}/{neededForNext}
                 </span>
               </div>
             </div>
@@ -315,7 +332,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
         })}
       </div>
 
-      {allItems.length === 0 && (
+      {shopItems.length === 0 && (
         <p className="py-8 text-center font-pixel text-xs text-zinc-500">Магазин пуст</p>
       )}
     </div>
