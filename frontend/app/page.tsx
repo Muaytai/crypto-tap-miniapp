@@ -418,7 +418,7 @@ export default function Home() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -456,7 +456,11 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex h-full flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex h-full flex-col overflow-hidden ${
+          activeTab === null || activeTab === "lab" || activeTab === "upgrades"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
+        }`}
       >
         <GameHeader playerState={playerState} />
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -504,15 +508,16 @@ function DevHome() {
       { id: 4, name: "Стул", base_income_per_second: 1, base_price: 50, icon_name: "chair" },
     ],
     available_upgrades: [
-      {
-        id: 12,
-        name: "Закалённые руки",
-        upgrade_type: "click_multiplier",
-        value: 2.0,
-        base_price: 500,
-        min_total_taps: 0,
-        icon_name: "",
-      },
+      { id: 1, name: "Закалённые руки", description: "Каждый тап приносит вдвое больше осколков.", upgrade_type: "click_multiplier", value: 2, base_price: 500, min_total_taps: 0, icon_name: "" },
+      { id: 2, name: "Двойной хеш", description: "Усиливает силу клика — как повторный прогон nonce.", upgrade_type: "click_multiplier", value: 1.5, base_price: 5000, min_total_taps: 1000, icon_name: "" },
+      { id: 3, name: "ASIC-пальцы", description: "Клики бьют по монетам, как чип под SHA-256.", upgrade_type: "click_multiplier", value: 2, base_price: 50000, min_total_taps: 10000, icon_name: "" },
+      { id: 4, name: "Lightning tap", description: "Мгновенные клики — максимальный множитель тапа.", upgrade_type: "click_multiplier", value: 3, base_price: 500000, min_total_taps: 100000, icon_name: "" },
+      { id: 5, name: "Разгон рига", description: "Пассивный доход от лаборатории +25%.", upgrade_type: "income_multiplier", value: 1.25, base_price: 2000, min_total_taps: 500, icon_name: "" },
+      { id: 6, name: "Пул хешей", description: "Объединённый хеш-рейт фермы усиливает доход в секунду.", upgrade_type: "income_multiplier", value: 1.5, base_price: 25000, min_total_taps: 5000, icon_name: "" },
+      { id: 7, name: "Дата-центр ×2", description: "Промышленный масштаб: пассивный доход удваивается.", upgrade_type: "income_multiplier", value: 2, base_price: 250000, min_total_taps: 50000, icon_name: "" },
+      { id: 8, name: "Удлинённая смена", description: "Оффлайн-накопление ещё на 1 час (поверх базового лимита).", upgrade_type: "offline_extension", value: 60, base_price: 5000, min_total_taps: 0, icon_name: "" },
+      { id: 9, name: "Ночная ферма", description: "Риг копит осколки дольше, пока вы offline.", upgrade_type: "offline_extension", value: 120, base_price: 50000, min_total_taps: 2500, icon_name: "" },
+      { id: 10, name: "12-часовой буфер", description: "До 12 часов пассивного дохода без входа в игру.", upgrade_type: "offline_extension", value: 360, base_price: 500000, min_total_taps: 25000, icon_name: "" },
     ],
     income_per_second: 10,
   });
@@ -686,7 +691,7 @@ function DevHome() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -724,7 +729,9 @@ function DevHome() {
     <MobileAppFrame>
       <div
         className={`flex h-full flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+          activeTab === "lab" || activeTab === "upgrades" || activeTab === "top"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
         }`}
       >
         <GameHeader playerState={playerState} />
