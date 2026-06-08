@@ -154,3 +154,22 @@ body {
 .animate-bounce {
   animation: bounce 1s ease infinite;
 }
+
+
+
+
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: floatUp 0.6s ease-out forwards;
+}

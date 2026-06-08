@@ -5,10 +5,10 @@
  * По умолчанию — главная страница с тапалкой (activeTab === null).
  * Повторное нажатие на активную кнопку закрывает меню.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
-import { SimpleTapGame } from "@/components/SimpleTapGame";
+import { RoomScene } from "@/components/RoomScene";
 import { ItemShop } from "@/components/ItemShop";
 import { UpgradesPanel } from "@/components/UpgradesPanel";
 import { DailyRewardModal } from "@/components/DailyRewardModal";
@@ -19,7 +19,7 @@ import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
 import { DynamicBackground } from "@/components/DynamicBackground";
-import { fetchDailyRewardStatus, fetchFullState, type PlayerState } from "@/lib/api";
+import { fetchDailyRewardStatus, fetchFullState, syncTaps, type PlayerState } from "@/lib/api";
 import { watchTelegramInitData } from "@/lib/telegram";
 
 type DockTab = "lab" | "upgrades" | "goals" | "prestige" | "top";
@@ -174,6 +174,11 @@ export default function Home() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
+  // Тапы
+  const [clickMultiplier, setClickMultiplier] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const pendingTapsRef = useRef(0);
+
   useEffect(() => {
     return watchTelegramInitData((raw) => {
       setInitData(raw);
@@ -197,6 +202,19 @@ export default function Home() {
     void loadState();
   }, [initData]);
 
+  // Обновляем множитель кликов из улучшений
+  useEffect(() => {
+    if (!playerState) return;
+    if (!initData || initData === "dev") {
+      const purchasedClickUpgrade = playerState.available_upgrades.find(
+        u => u.upgrade_type === "click_multiplier" &&
+        playerState.upgrades.some(pu => pu.upgrade_id === u.id)
+      );
+      setClickMultiplier(purchasedClickUpgrade?.value || 1);
+    }
+  }, [playerState, initData]);
+
+  // Глобальный таймер для пассивного дохода
   useEffect(() => {
     if (!playerState) return;
     if (playerState.income_per_second === 0) return;
@@ -241,6 +259,63 @@ export default function Home() {
       });
     }
   };
+
+  const handleComponentUpgrade = (itemId: number, delta: number) => {
+    if (!playerState) return;
+
+    const item = playerState.available_items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentItem = playerState.items.find(i => i.item_id === itemId);
+    const currentLevel = currentItem?.level || 1;
+
+    const newLevel = Math.min(10, Math.max(1, currentLevel + delta));
+    if (newLevel === currentLevel) return;
+
+    const updatedItems = [...playerState.items];
+    const existingIndex = updatedItems.findIndex(i => i.item_id === itemId);
+    const simulatedQuantity = newLevel * 10;
+
+    if (existingIndex >= 0) {
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        level: newLevel,
+        quantity: simulatedQuantity
+      };
+    } else {
+      updatedItems.push({
+        item_id: itemId,
+        item_name: item.name,
+        item_icon: item.icon_name || "",
+        quantity: simulatedQuantity,
+        level: newLevel,
+        item_base_income: item.base_income_per_second,
+        item_base_price: item.base_price,
+      });
+    }
+
+    setPlayerState({ ...playerState, items: updatedItems });
+  };
+
+  const handleTap = useCallback(() => {
+    pendingTapsRef.current += 1;
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 160);
+
+    if (playerState) {
+      setPlayerState(prev => prev ? {
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + clickMultiplier
+        }
+      } : null);
+    }
+
+    if (initData && initData !== "dev") {
+      syncTaps(initData, 1, 0).catch(console.error);
+    }
+  }, [clickMultiplier, playerState, initData]);
 
   if (!initData) {
     return <DevHome />;
@@ -306,6 +381,8 @@ export default function Home() {
           incomePerSecond={playerState.income_per_second}
           isDev={!initData}
           onIncomeChange={handleIncomeChange}
+          onComponentUpgrade={handleComponentUpgrade}
+          playerState={playerState}
         >
           <div className="relative flex h-full flex-col">
             <LabTopBar
@@ -320,7 +397,12 @@ export default function Home() {
                   className="border-white/10 bg-transparent px-1 py-1.5 shadow-none"
                 />
               </div>
-              <SimpleTapGame initData={initData} playerState={playerState} onSync={handleSync} />
+              <RoomScene
+                playerState={playerState}
+                onTap={handleTap}
+                clickMultiplier={clickMultiplier}
+                isAnimating={isAnimating}
+              />
             </div>
           </div>
         </DynamicBackground>
@@ -336,7 +418,7 @@ export default function Home() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData={initData} playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -374,7 +456,11 @@ export default function Home() {
   return (
     <MobileAppFrame>
       <div
-        className={`flex h-full flex-col overflow-hidden ${activeTab === null ? "bg-[#070b14]" : "bg-[#2a2319]"}`}
+        className={`flex h-full flex-col overflow-hidden ${
+          activeTab === null || activeTab === "lab" || activeTab === "upgrades"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
+        }`}
       >
         <GameHeader playerState={playerState} />
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -416,33 +502,22 @@ function DevHome() {
     items: [],
     upgrades: [],
     available_items: [
-      { id: 100, name: "Комната", base_income_per_second: 10, base_price: 100, icon_name: "" },
-      { id: 101, name: "Персонаж", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 102, name: "Кнопка", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 13, name: "GPU-риг", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 14, name: "ASIC-линия", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 15, name: "Блок питания Gold", base_income_per_second: 12, base_price: 120, icon_name: "" },
-      { id: 16, name: "Плоскогубцы", base_income_per_second: 1, base_price: 10, icon_name: "" },
-      { id: 17, name: "Молоток", base_income_per_second: 5, base_price: 50, icon_name: "" },
-      { id: 18, name: "Паяльник", base_income_per_second: 25, base_price: 250, icon_name: "" },
-      { id: 103, name: "Стул", base_income_per_second: 3, base_price: 30, icon_name: "" },
-      { id: 104, name: "Стол", base_income_per_second: 4, base_price: 40, icon_name: "" },
-      { id: 105, name: "Компьютер", base_income_per_second: 8, base_price: 80, icon_name: "" },
-      { id: 106, name: "Кружка", base_income_per_second: 2, base_price: 20, icon_name: "" },
-      { id: 107, name: "Ковёр", base_income_per_second: 3, base_price: 30, icon_name: "" },
-      { id: 108, name: "Картина", base_income_per_second: 2, base_price: 20, icon_name: "" },
-      { id: 109, name: "Диван", base_income_per_second: 6, base_price: 60, icon_name: "" },
+      { id: 1, name: "Диван", base_income_per_second: 2, base_price: 100, icon_name: "sofa" },
+      { id: 2, name: "Стол", base_income_per_second: 3, base_price: 150, icon_name: "desk" },
+      { id: 3, name: "Ноутбук", base_income_per_second: 4, base_price: 200, icon_name: "laptop" },
+      { id: 4, name: "Стул", base_income_per_second: 1, base_price: 50, icon_name: "chair" },
     ],
     available_upgrades: [
-      {
-        id: 12,
-        name: "Закалённые руки",
-        upgrade_type: "click_multiplier",
-        value: 2.0,
-        base_price: 500,
-        min_total_taps: 0,
-        icon_name: "",
-      },
+      { id: 1, name: "Закалённые руки", description: "Каждый тап приносит вдвое больше осколков.", upgrade_type: "click_multiplier", value: 2, base_price: 500, min_total_taps: 0, icon_name: "" },
+      { id: 2, name: "Двойной хеш", description: "Усиливает силу клика — как повторный прогон nonce.", upgrade_type: "click_multiplier", value: 1.5, base_price: 5000, min_total_taps: 1000, icon_name: "" },
+      { id: 3, name: "ASIC-пальцы", description: "Клики бьют по монетам, как чип под SHA-256.", upgrade_type: "click_multiplier", value: 2, base_price: 50000, min_total_taps: 10000, icon_name: "" },
+      { id: 4, name: "Lightning tap", description: "Мгновенные клики — максимальный множитель тапа.", upgrade_type: "click_multiplier", value: 3, base_price: 500000, min_total_taps: 100000, icon_name: "" },
+      { id: 5, name: "Разгон рига", description: "Пассивный доход от лаборатории +25%.", upgrade_type: "income_multiplier", value: 1.25, base_price: 2000, min_total_taps: 500, icon_name: "" },
+      { id: 6, name: "Пул хешей", description: "Объединённый хеш-рейт фермы усиливает доход в секунду.", upgrade_type: "income_multiplier", value: 1.5, base_price: 25000, min_total_taps: 5000, icon_name: "" },
+      { id: 7, name: "Дата-центр ×2", description: "Промышленный масштаб: пассивный доход удваивается.", upgrade_type: "income_multiplier", value: 2, base_price: 250000, min_total_taps: 50000, icon_name: "" },
+      { id: 8, name: "Удлинённая смена", description: "Оффлайн-накопление ещё на 1 час (поверх базового лимита).", upgrade_type: "offline_extension", value: 60, base_price: 5000, min_total_taps: 0, icon_name: "" },
+      { id: 9, name: "Ночная ферма", description: "Риг копит осколки дольше, пока вы offline.", upgrade_type: "offline_extension", value: 120, base_price: 50000, min_total_taps: 2500, icon_name: "" },
+      { id: 10, name: "12-часовой буфер", description: "До 12 часов пассивного дохода без входа в игру.", upgrade_type: "offline_extension", value: 360, base_price: 500000, min_total_taps: 25000, icon_name: "" },
     ],
     income_per_second: 10,
   });
@@ -450,6 +525,10 @@ function DevHome() {
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
+
+  const [clickMultiplier, setClickMultiplier] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const pendingTapsRef = useRef(0);
 
   useEffect(() => {
     if (playerState.income_per_second === 0) return;
@@ -472,6 +551,14 @@ function DevHome() {
       .then((s) => setDailyClaimable(s.can_claim))
       .catch(() => setDailyClaimable(false));
   }, [activeTab]);
+
+  useEffect(() => {
+    const purchasedClickUpgrade = playerState.available_upgrades.find(
+      u => u.upgrade_type === "click_multiplier" &&
+      playerState.upgrades.some(pu => pu.upgrade_id === u.id)
+    );
+    setClickMultiplier(purchasedClickUpgrade?.value || 1);
+  }, [playerState]);
 
   const handleTabChangeDev = (tabId: DockTab) => {
     if (activeTab === tabId) {
@@ -512,6 +599,57 @@ function DevHome() {
     }));
   };
 
+  const handleComponentUpgradeDev = (itemId: number, delta: number) => {
+    const item = playerState.available_items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentItem = playerState.items.find(i => i.item_id === itemId);
+    const currentLevel = currentItem?.level || 1;
+
+    const newLevel = Math.min(10, Math.max(1, currentLevel + delta));
+    if (newLevel === currentLevel) return;
+
+    const updatedItems = [...playerState.items];
+    const existingIndex = updatedItems.findIndex(i => i.item_id === itemId);
+    const simulatedQuantity = newLevel * 10;
+
+    if (existingIndex >= 0) {
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        level: newLevel,
+        quantity: simulatedQuantity
+      };
+    } else {
+      updatedItems.push({
+        item_id: itemId,
+        item_name: item.name,
+        item_icon: item.icon_name || "",
+        quantity: simulatedQuantity,
+        level: newLevel,
+        item_base_income: item.base_income_per_second,
+        item_base_price: item.base_price,
+      });
+    }
+
+    setPlayerState({ ...playerState, items: updatedItems });
+  };
+
+  const handleTapDev = useCallback(() => {
+    pendingTapsRef.current += 1;
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 160);
+
+    if (playerState) {
+      setPlayerState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          coins: prev.player.coins + clickMultiplier
+        }
+      }));
+    }
+  }, [clickMultiplier, playerState]);
+
   const renderContent = () => {
     if (activeTab === null) {
       return (
@@ -519,6 +657,8 @@ function DevHome() {
           incomePerSecond={playerState.income_per_second}
           isDev={true}
           onIncomeChange={handleIncomeChangeDev}
+          onComponentUpgrade={handleComponentUpgradeDev}
+          playerState={playerState}
         >
           <div className="flex h-full flex-col">
             <LabTopBar
@@ -530,7 +670,12 @@ function DevHome() {
               <div className="px-2 pt-2">
                 <CryptoTipBanner seed={777} className="border-white/10 bg-transparent px-1 py-1.5 shadow-none" />
               </div>
-              <SimpleTapGame initData="dev" playerState={playerState} onSync={handleSync} />
+              <RoomScene
+                playerState={playerState}
+                onTap={handleTapDev}
+                clickMultiplier={clickMultiplier}
+                isAnimating={isAnimating}
+              />
             </div>
           </div>
         </DynamicBackground>
@@ -546,7 +691,7 @@ function DevHome() {
         );
       case "upgrades":
         return (
-          <div className="h-full w-full overflow-y-auto">
+          <div className="h-full w-full overflow-y-auto bg-[#0f0c0a]">
             <UpgradesPanel initData="dev" playerState={playerState} onPurchase={handlePurchase} />
           </div>
         );
@@ -584,7 +729,9 @@ function DevHome() {
     <MobileAppFrame>
       <div
         className={`flex h-full flex-col overflow-hidden ${
-          activeTab === "lab" ? "bg-[#070b14]" : activeTab === "top" ? "bg-[#070b14]" : "bg-[#2a2319]"
+          activeTab === "lab" || activeTab === "upgrades" || activeTab === "top"
+            ? "bg-[#070b14]"
+            : "bg-[#2a2319]"
         }`}
       >
         <GameHeader playerState={playerState} />

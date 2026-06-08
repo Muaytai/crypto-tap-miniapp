@@ -1014,25 +1014,29 @@ class TestListAchievementsView(APIView):
                 {"achievements": [], "new_achievements": [], "error": "bad_telegram_id"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        try:
-            player = Player.objects.get(telegram_id=telegram_id)
-        except Player.DoesNotExist:
-            if telegram_id != 777:
+        if telegram_id != 777:
+            try:
+                player = Player.objects.get(telegram_id=telegram_id)
+            except Player.DoesNotExist:
                 return Response(
                     {"achievements": [], "new_achievements": [], "error": "player_not_found"},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            player = Player.objects.create(
+        else:
+            player, created = Player.objects.get_or_create(
                 telegram_id=777,
-                username="dev",
-                first_name="Разработчик",
-                coins=100_000,
-                total_taps=1_000,
-                crystals=10,
-                total_earned_all_time=1_000_000,
-                prestige_count=1,
+                defaults={
+                    "username": "dev",
+                    "first_name": "Разработчик",
+                    "coins": 100_000,
+                    "total_taps": 1_000,
+                    "crystals": 10,
+                    "total_earned_all_time": 1_000_000,
+                    "prestige_count": 1,
+                },
             )
-            player.recalculate_income_per_second()
+            if created:
+                player.recalculate_income_per_second()
         return Response(achievements_response_data(player))
 
 
