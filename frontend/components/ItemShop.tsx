@@ -197,21 +197,18 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
   const currentMultiplier = selectedMultiplier;
 
-  // Получаем путь к картинке компонента по уровню
-  const getComponentImage = (itemName: string, level: number): string => {
-    const name = itemName.toLowerCase();
-    if (name.includes("диван")) return `/images/sofa/sofa_${level}.png`;
-    if (name.includes("стол")) return `/images/desk/desk_${level}.png`;
-    if (name.includes("ноутбук") || name.includes("компьютер")) return `/images/laptop/laptop_${level}.png`;
-    if (name.includes("стул")) return `/images/chair/chair_${level}.png`;
-    return `/images/items/${itemName}.png`;
+  // СТАТИЧНАЯ иконка — путь не зависит от уровня
+  const getStaticImage = (itemName: string): string => {
+    // Убираем пробелы для имени файла
+    const fileName = itemName.replace(/\s/g, '');
+    return `/images/ItemShop/${fileName}.png`;
   };
 
   // fallback эмодзи на случай ошибки
   const getFallbackEmoji = (itemName: string): string => {
     if (itemName.includes("Диван")) return "🛋️";
     if (itemName.includes("Стол")) return "🪵";
-    if (itemName.includes("Ноутбук") || itemName.includes("Компьютер")) return "💻";
+    if (itemName.includes("Ноутбук")) return "💻";
     if (itemName.includes("Стул")) return "🪑";
     return "📦";
   };
@@ -265,7 +262,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           const priceForSelected = getPriceForDisplay(item, currentMultiplier);
           const canAfford = playerState.player.coins >= priceForSelected;
 
-          const imageUrl = getComponentImage(item.name, currentLevel);
+          const imageUrl = getStaticImage(item.name);
           const fallbackEmoji = getFallbackEmoji(item.name);
           const hasError = imgErrors[item.id];
 
