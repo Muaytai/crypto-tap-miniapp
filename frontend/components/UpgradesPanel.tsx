@@ -150,8 +150,9 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     }
   };
 
-  const getUpgradeIcon = (type: string): string => {
-    switch (type) {
+  const getUpgradeIcon = (upgrade: UpgradeRow): string => {
+    if (upgrade.icon_name?.trim()) return upgrade.icon_name.trim();
+    switch (upgrade.upgrade_type) {
       case "click_multiplier":
         return "👆";
       case "income_multiplier":
@@ -203,7 +204,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-violet-500/30 bg-[rgba(30,20,40,0.6)]">
-                    <span className="text-2xl">{getUpgradeIcon(upgrade.upgrade_type)}</span>
+                    <span className="text-2xl">{getUpgradeIcon(upgrade)}</span>
                   </div>
                   <div>
                     <h3 className="font-pixel text-base font-bold text-violet-100">{upgrade.name}</h3>
