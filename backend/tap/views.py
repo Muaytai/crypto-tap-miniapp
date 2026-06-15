@@ -266,17 +266,23 @@ class BuyUpgradeView(APIView):
 
         # Покупаем
         with transaction.atomic():
+            player = Player.objects.select_for_update().get(pk=player.pk)
+
+            if player.coins < upgrade.base_price:
+                return Response(
+                    {"error": f"Not enough coins. Need {upgrade.base_price}, have {player.coins}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             player.coins -= upgrade.base_price
             player.save(update_fields=["coins"])
 
             PlayerUpgrade.objects.create(player=player, upgrade=upgrade)
 
-            # Применяем эффект улучшения
             if upgrade.upgrade_type == "offline_extension":
                 player.max_offline_minutes += int(upgrade.value)
                 player.save(update_fields=["max_offline_minutes"])
 
-            # Если улучшение влияет на доход или клики — пересчитываем кэш
             if upgrade.upgrade_type in ["income_multiplier", "click_multiplier"]:
                 player.recalculate_income_per_second()
 

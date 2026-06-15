@@ -33,9 +33,9 @@ class PlayerItemAdmin(admin.ModelAdmin):
 
 @admin.register(Upgrade)
 class UpgradeAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "upgrade_type", "value", "base_price", "is_celestial", "is_active", "sort_order")
+    list_display = ("id", "name", "icon_name", "upgrade_type", "value", "base_price", "is_celestial", "is_active", "sort_order")
     list_editable = ("base_price", "is_active", "sort_order", "is_celestial")
-    search_fields = ("name",)
+    search_fields = ("name", "icon_name")
     list_filter = ("upgrade_type", "is_celestial", "is_active")
 
 
@@ -63,9 +63,9 @@ class PlayerCelestialUpgradeAdmin(admin.ModelAdmin):
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "trigger_type", "trigger_value", "reward_crystals", "reward_coins", "is_active")
+    list_display = ("id", "name", "icon_name", "trigger_type", "trigger_value", "reward_crystals", "reward_coins", "is_active")
     list_editable = ("trigger_value", "reward_crystals", "reward_coins", "is_active")
-    search_fields = ("name",)
+    search_fields = ("name", "icon_name")
     list_filter = ("trigger_type", "is_active")
 
 

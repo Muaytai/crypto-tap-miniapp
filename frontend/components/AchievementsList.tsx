@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchAchievements, type PlayerState } from "@/lib/api";
 import { AchievementIcon } from "@/components/AchievementIcon";
+import { playGameSound } from "@/lib/gameSounds";
 
 type Props = {
   initData: string;
@@ -14,6 +15,7 @@ type Achievement = {
   id: number;
   name: string;
   description: string;
+  icon_name?: string;
   trigger_type: string;
   trigger_value: number;
   reward_crystals: number;
@@ -33,6 +35,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
         setAchievements(data.achievements || []);
         if (data.new_achievements?.length > 0) {
           setNewAchievements(data.new_achievements);
+          playGameSound("success");
           data.new_achievements.forEach((ach: any) => {
             if (ach.reward_coins > 0 || ach.reward_crystals > 0) {
               onReward?.(ach.reward_coins, ach.reward_crystals);
@@ -111,7 +114,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
             Достижения скоро появятся
           </div>
         ) : (
-          achievements.map((ach) => {
+          achievements.map((ach, index) => {
             const current = getCurrentValue(ach);
             const pct = ach.trigger_value > 0 ? Math.min(100, (current / ach.trigger_value) * 100) : 0;
 
@@ -125,7 +128,7 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
                 }`}
               >
                 <div className="flex gap-5">
-                  <AchievementIcon achievement={ach} progressPct={pct} />
+                  <AchievementIcon achievement={ach} progressPct={pct} sortIndex={index} />
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-pixel text-lg font-bold text-white tracking-wide">{ach.name}</h3>

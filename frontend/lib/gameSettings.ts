@@ -11,7 +11,7 @@ export type GameSettings = {
 };
 
 const DEFAULTS: GameSettings = {
-  sound: false,
+  sound: true,
   music: false,
   vibration: true,
 };

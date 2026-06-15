@@ -10,6 +10,7 @@ import {
   isLocalDevMock,
   type PlayerState,
 } from "@/lib/api";
+import { playGameSound } from "@/lib/gameSounds";
 
 type Props = {
   initData: string;
@@ -82,6 +83,7 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
             coins: 0,
             crystals: result.total_crystals || playerState.player.crystals,
             prestige_count: result.prestige_count || playerState.player.prestige_count + 1,
+            max_offline_minutes: 180,
           },
           items: [],
           upgrades: [],
@@ -89,9 +91,11 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
         };
         onPrestige(updated);
         setSuccess(`Закалка выполнена! +${result.crystals_earned || 0} 💎`);
+        playGameSound("success");
       }
     } catch (err) {
       setError("Ошибка при перезакалке");
+      playGameSound("error");
     } finally {
       setLoading(false);
     }
@@ -107,9 +111,11 @@ export function PrestigePanel({ initData, playerState, onPrestige, onUpdate }: P
           player: { ...playerState.player, crystals: result.crystals_left },
         });
         setSuccess(`Куплено: ${upgrade.name}`);
+        playGameSound("success");
       }
     } catch (err) {
       setError("Не удалось купить апгрейд");
+      playGameSound("error");
     } finally {
       setBuyingUpgradeId(null);
     }

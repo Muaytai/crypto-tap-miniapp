@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { achievementImageUrl } from "@/lib/achievementIcons";
 import { tierIconSizeClass, type GoalTier } from "@/lib/goalTiers";
 
 type AchievementLike = {
+  id?: number;
   name: string;
   description: string;
   trigger_type: string;
@@ -10,7 +13,7 @@ type AchievementLike = {
   icon_name?: string;
 };
 
-export type AchievementIconKind =
+type AchievementIconKind =
   | "tap"
   | "satoshi"
   | "chart"
@@ -25,23 +28,6 @@ export type AchievementIconKind =
   | "rocket"
   | "default";
 
-const ICON_NAMES: AchievementIconKind[] = [
-  "tap",
-  "satoshi",
-  "chart",
-  "gpu",
-  "rig",
-  "asic",
-  "datacenter",
-  "wallet",
-  "hodl",
-  "shield",
-  "diamond",
-  "rocket",
-  "default",
-];
-
-/** Крупный символ в едином «чипе» — читается лучше, чем мелкий SVG */
 const GLYPH: Record<AchievementIconKind, string> = {
   tap: "⚡",
   satoshi: "₿",
@@ -74,11 +60,7 @@ const GLYPH_BG: Record<AchievementIconKind, string> = {
   default: "from-zinc-500/20 to-zinc-800/30",
 };
 
-export function achievementIconKind(ach: AchievementLike): AchievementIconKind {
-  const key = ach.icon_name?.trim().toLowerCase();
-  if (key && ICON_NAMES.includes(key as AchievementIconKind)) {
-    return key as AchievementIconKind;
-  }
+function achievementIconKind(ach: AchievementLike): AchievementIconKind {
   if (ach.trigger_type === "total_taps") return "tap";
   if (ach.trigger_type === "total_coins_earned") return "satoshi";
   if (ach.trigger_type === "items_bought") return "gpu";
@@ -90,32 +72,51 @@ type Props = {
   achievement: AchievementLike;
   progressPct: number;
   tier?: GoalTier;
+  sortIndex?: number;
 };
 
-export function AchievementIcon({ achievement, progressPct, tier = 3 }: Props) {
+export function AchievementIcon({ achievement, progressPct, tier = 3, sortIndex = 0 }: Props) {
+  const [imgError, setImgError] = useState(false);
   const kind = achievementIconKind(achievement);
   const earned = achievement.is_earned;
   const inProgress = !earned && progressPct > 0 && progressPct < 100;
   const sizeClass = tierIconSizeClass(tier);
   const glyph = GLYPH[kind];
-  const glyphSize =
-    tier >= 5 ? "text-2xl" : tier >= 4 ? "text-xl" : tier >= 3 ? "text-lg" : "text-base";
+  const imageUrl = achievementImageUrl(achievement, sortIndex);
 
   return (
     <div
       className={[
-        "relative flex shrink-0 items-center justify-center rounded-2xl border shadow-inner",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border shadow-inner",
         sizeClass,
-        `bg-gradient-to-br ${GLYPH_BG[kind]}`,
         earned
-          ? "border-emerald-400/60 from-emerald-950 to-cyan-950 shadow-[0_0_18px_rgba(16,185,129,0.3)]"
+          ? "border-emerald-400/60 bg-zinc-950 shadow-[0_0_18px_rgba(16,185,129,0.3)]"
           : inProgress
-            ? "border-cyan-400/50 shadow-[0_0_14px_rgba(34,211,238,0.25)]"
-            : "border-white/15",
+            ? "border-cyan-400/50 bg-zinc-950 shadow-[0_0_14px_rgba(34,211,238,0.25)]"
+            : "border-white/15 bg-zinc-950/90",
       ].join(" ")}
       aria-hidden
     >
-      <span className="select-none text-3xl leading-none">{glyph}</span>
+      {!imgError ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className={[
+            "h-full w-full object-contain p-1 transition-all",
+            earned ? "drop-shadow-[0_0_10px_rgba(16,185,129,0.35)]" : inProgress ? "opacity-90" : "opacity-75 grayscale-[0.35]",
+          ].join(" ")}
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span
+          className={[
+            "flex h-full w-full select-none items-center justify-center text-2xl leading-none",
+            `bg-gradient-to-br ${GLYPH_BG[kind]}`,
+          ].join(" ")}
+        >
+          {glyph}
+        </span>
+      )}
       {earned && (
         <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-400 bg-black text-xs text-emerald-400">
           ✓
