@@ -123,6 +123,7 @@ export type PlayerState = {
   upgrades: Array<{
     upgrade_id: number;
     upgrade_name: string;
+    upgrade_icon?: string;
   }>;
   available_items: Array<{
     id: number;
@@ -134,6 +135,7 @@ export type PlayerState = {
   available_upgrades: Array<{
     id: number;
     name: string;
+    description?: string;
     upgrade_type: string;
     value: number;
     base_price: number;
@@ -181,6 +183,8 @@ export async function buyUpgrade(
   upgrade_name: string;
   upgrade_type: string;
   coins_left: number;
+  max_offline_minutes?: number;
+  cached_income_per_second?: number;
 }> {
   return apiFetch("/api/upgrades/buy/", {
     method: "POST",

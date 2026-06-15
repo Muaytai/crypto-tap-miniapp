@@ -8,6 +8,7 @@ import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
 import { CelestialPanel } from "@/components/CelestialPanel";
 import { useState } from "react";
+import { NEW_UPGRADES_FOR_DEV } from "@/lib/upgradesCatalog";
 
 type DockTab = "game" | "shop" | "upgrades" | "prestige" | "celestial" | "profile" | "top";
 
@@ -33,8 +34,17 @@ const TEST_PLAYER_STATE = {
     { id: 16, name: "Горелка", base_income_per_second: 100, base_price: 1000 },
   ],
   available_upgrades: [
-    { id: 12, name: "Закалённые руки", upgrade_type: "click_multiplier", value: 2.0, base_price: 500, min_total_taps: 0 },
-    { id: 16, name: "Удлинённая смена", upgrade_type: "offline_extension", value: 60, base_price: 5000, min_total_taps: 0 },
+    { id: 1, name: "Закалённые руки", description: "Каждый тап приносит вдвое больше осколков.", upgrade_type: "click_multiplier", value: 2, base_price: 500, min_total_taps: 0, icon_name: "" },
+    { id: 2, name: "Двойной хеш", description: "Усиливает силу клика — как повторный прогон nonce.", upgrade_type: "click_multiplier", value: 1.5, base_price: 5000, min_total_taps: 1000, icon_name: "" },
+    { id: 3, name: "ASIC-пальцы", description: "Клики бьют по монетам, как чип под SHA-256.", upgrade_type: "click_multiplier", value: 2, base_price: 50000, min_total_taps: 10000, icon_name: "" },
+    { id: 4, name: "Lightning tap", description: "Мгновенные клики — максимальный множитель тапа.", upgrade_type: "click_multiplier", value: 3, base_price: 500000, min_total_taps: 100000, icon_name: "" },
+    { id: 5, name: "Разгон рига", description: "Пассивный доход от лаборатории +25%.", upgrade_type: "income_multiplier", value: 1.25, base_price: 2000, min_total_taps: 500, icon_name: "" },
+    { id: 6, name: "Пул хешей", description: "Объединённый хеш-рейт фермы усиливает доход в секунду.", upgrade_type: "income_multiplier", value: 1.5, base_price: 25000, min_total_taps: 5000, icon_name: "" },
+    { id: 7, name: "Дата-центр ×2", description: "Промышленный масштаб: пассивный доход удваивается.", upgrade_type: "income_multiplier", value: 2, base_price: 250000, min_total_taps: 50000, icon_name: "" },
+    { id: 8, name: "Удлинённая смена", description: "Оффлайн-накопление ещё на 1 час (поверх базового лимита).", upgrade_type: "offline_extension", value: 60, base_price: 5000, min_total_taps: 0, icon_name: "" },
+    { id: 9, name: "Ночная ферма", description: "Риг копит осколки дольше, пока вы offline.", upgrade_type: "offline_extension", value: 120, base_price: 50000, min_total_taps: 2500, icon_name: "" },
+    { id: 10, name: "12-часовой буфер", description: "До 12 часов пассивного дохода без входа в игру.", upgrade_type: "offline_extension", value: 360, base_price: 500000, min_total_taps: 25000, icon_name: "" },
+    ...NEW_UPGRADES_FOR_DEV,
   ],
   income_per_second: 10,
 };

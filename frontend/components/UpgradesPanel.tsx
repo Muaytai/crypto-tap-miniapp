@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { buyUpgrade, type PlayerState } from "@/lib/api";
-import { ItemShop } from "@/components/ItemShop";
 
 type Props = {
   initData: string;
@@ -36,7 +35,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   const [recentPurchase, setRecentPurchase] = useState<number | null>(null);
 
   const isDev = initData === "dev" || initData === "test_init_data";
-  const purchasedUpgradeIds = new Set(playerState.upgrades.map(u => u.upgrade_id));
+  const purchasedUpgradeIds = new Set(playerState.upgrades.map((u) => u.upgrade_id));
 
   const handleBuy = async (upgradeId: number) => {
     setLoading(upgradeId);
@@ -63,7 +62,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
 
     if (isDev) {
       setTimeout(() => {
-        const updatedState = {
+        let next: PlayerState = {
           ...playerState,
           player: {
             ...playerState.player,
@@ -87,9 +86,10 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
 
     // Реальный API-запрос
     try {
+      const catalogUpgrade = playerState.available_upgrades.find((u) => u.id === upgradeId);
       const result = await buyUpgrade(initData, upgradeId);
       if (result.success) {
-        const updatedState = {
+        onPurchase({
           ...playerState,
           player: { ...playerState.player, coins: result.coins_left },
           upgrades: [
@@ -127,14 +127,17 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     return true;
   };
 
-  const getLockReason = (upgrade: PlayerState["available_upgrades"][0]): string => {
+  const getLockReason = (upgrade: UpgradeRow): string => {
     if (upgrade.min_total_taps > 0 && playerState.player.total_taps < upgrade.min_total_taps) {
       return `🔒 Нужно ${upgrade.min_total_taps.toLocaleString("ru-RU")} тапов`;
     }
     return "🔒 Недоступно";
   };
 
-  const getUpgradeDescription = (upgrade: PlayerState["available_upgrades"][0]): string => {
+  const getUpgradeDescription = (upgrade: UpgradeRow): string => {
+    if (upgrade.description?.trim()) {
+      return upgrade.description.trim();
+    }
     switch (upgrade.upgrade_type) {
       case "click_multiplier":
         return `Тап ×${upgrade.value}`;
