@@ -30,16 +30,14 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
     const loadAchievements = async () => {
       try {
         const data = await fetchAchievements(initData);
-        setAchievements(data.achievements);
+        setAchievements(data.achievements || []);
         if (data.new_achievements?.length > 0) {
           setNewAchievements(data.new_achievements);
-          // Уведомляем о наградах
-          for (const ach of data.new_achievements) {
+          data.new_achievements.forEach((ach: any) => {
             if (ach.reward_coins > 0 || ach.reward_crystals > 0) {
               onReward?.(ach.reward_coins, ach.reward_crystals);
             }
-          }
-          // Скрываем уведомления через 5 секунд
+          });
           setTimeout(() => setNewAchievements([]), 5000);
         }
       } catch (err) {
@@ -49,16 +47,16 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
       }
     };
     loadAchievements();
-  }, [initData, playerState.player.total_taps, playerState.player.prestige_count]);
+  }, [initData, playerState.player.total_taps, playerState.player.prestige_count, onReward]);
 
   const getTriggerText = (type: string, value: number): string => {
     switch (type) {
       case "total_taps":
         return `Сделайте ${value.toLocaleString("ru-RU")} кликов`;
       case "total_coins_earned":
-        return `Заработайте ${value.toLocaleString("ru-RU")} осколков`;
+        return `Заработайте ${value.toLocaleString("ru-RU")} монет`;
       case "prestige_count":
-        return `Сделайте закалку ${value} раз`;
+        return `Сделайте ${value} закалок`;
       case "items_bought":
         return `Купите ${value.toLocaleString("ru-RU")} предметов`;
       default:
@@ -85,99 +83,77 @@ export function AchievementsList({ initData, playerState, onReward }: Props) {
   const progress = achievements.length > 0 ? (earnedCount / achievements.length) * 100 : 0;
 
   if (loading) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center text-zinc-500">
-        Загрузка достижений...
-      </div>
-    );
+    return <div className="py-12 text-center text-cyan-400/70">Загрузка достижений...</div>;
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {/* Уведомления о новых достижениях */}
-      {newAchievements.length > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 z-50 animate-bounce rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 p-3 text-center shadow-xl">
-          <p className="text-sm font-bold text-white">🏆 Новое достижение! 🏆</p>
-          {newAchievements.map((ach, idx) => (
-            <p key={idx} className="text-xs text-white/90">
-              {ach.name} +{ach.reward_crystals}💎 +{ach.reward_coins}💰
-            </p>
-          ))}
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-[#2e3a43] bg-[#141920] p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="font-pixel text-xs uppercase tracking-wide text-[#a8b5c2]">Достижения</p>
-          <p className="font-pixel text-sm text-[#f6cd2d]">
+    <div className="flex flex-col gap-4">
+      {/* Общий прогресс */}
+      <div className="rounded-3xl border border-cyan-500/20 bg-zinc-950/80 p-5">
+        <div className="flex justify-between mb-2">
+          <span className="font-pixel text-sm text-cyan-400">ПРОГРЕСС ДОСТИЖЕНИЙ</span>
+          <span className="font-mono text-lg font-bold text-white">
             {earnedCount}/{achievements.length}
-          </p>
+          </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-sm bg-[#2a3038]">
-          <div className="h-full bg-[#f6cd2d] transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-900">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 transition-all duration-700"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      {/* Список */}
+      <div className="flex flex-col gap-3">
         {achievements.length === 0 ? (
-          <div className="rounded-xl border border-[#3a424c] bg-[#1a2028] p-4 text-center font-pixel text-xs text-[#8f9bab]">
+          <div className="rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-center text-zinc-500">
             Достижения скоро появятся
           </div>
         ) : (
           achievements.map((ach) => {
             const current = getCurrentValue(ach);
             const pct = ach.trigger_value > 0 ? Math.min(100, (current / ach.trigger_value) * 100) : 0;
+
             return (
               <div
                 key={ach.id}
-                className={`rounded-xl border p-2.5 transition-all ${
+                className={`group relative overflow-hidden rounded-3xl border p-5 transition-all backdrop-blur-xl ${
                   ach.is_earned
-                    ? "border-[#f6cd2d] bg-[#1a1b14] shadow-[0_0_0_1px_rgba(246,205,45,0.25),0_0_16px_rgba(246,205,45,0.12)]"
-                    : "border-[#2b3945] bg-[#121922]/90 opacity-75"
+                    ? "border-emerald-400/50 bg-emerald-950/30 shadow-2xl shadow-emerald-500/10"
+                    : "border-white/10 bg-zinc-950/80 hover:border-cyan-400/40 hover:shadow-xl"
                 }`}
               >
-                <div className="mb-1 flex items-start gap-2.5">
+                <div className="flex gap-5">
                   <AchievementIcon achievement={ach} progressPct={pct} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-pixel text-[16px] leading-none text-[#eef2f6]">{ach.name}</h4>
-                      {ach.is_earned ? (
-                        <span className="shrink-0 rounded border border-[#f6cd2d]/70 bg-[#f6cd2d]/15 px-1.5 py-0.5 font-pixel text-[9px] uppercase tracking-wide text-[#f6cd2d]">
-                          выполнено
-                        </span>
-                      ) : null}
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-pixel text-lg font-bold text-white tracking-wide">{ach.name}</h3>
+                    <p className="mt-1 text-sm text-cyan-300">{getTriggerText(ach.trigger_type, ach.trigger_value)}</p>
+
+                    {ach.description && (
+                      <p className="mt-2 text-xs text-zinc-400 leading-relaxed">{ach.description}</p>
+                    )}
+
+                    <div className="mt-4 flex items-center justify-between text-sm">
+                      <div className="font-mono text-zinc-400">
+                        {current.toLocaleString("ru-RU")} / {ach.trigger_value.toLocaleString("ru-RU")}
+                      </div>
+                      <div className="font-mono text-emerald-400">
+                        +{ach.reward_coins}₿ {ach.reward_crystals > 0 && `+${ach.reward_crystals}💎`}
+                      </div>
                     </div>
-                    <p className="mt-1 font-pixel text-[10px] text-[#aeb8c5]">
-                      {getTriggerText(ach.trigger_type, ach.trigger_value)}
-                    </p>
-                    {ach.description ? (
-                      <p
-                        className={`mt-1.5 font-pixel text-[10px] leading-relaxed ${
-                          ach.is_earned ? "text-[#e8bf2f]" : "text-[#7f8d9d]"
-                        }`}
-                      >
-                        {ach.description}
-                      </p>
-                    ) : null}
                   </div>
                 </div>
-                <div className="mt-1.5">
-                  <div className="h-1.5 overflow-hidden rounded bg-[#2a333d]">
+
+                {!ach.is_earned && (
+                  <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-zinc-900">
                     <div
-                      className={`h-full transition-all ${ach.is_earned ? "bg-[#f6cd2d]" : "bg-[#2fb5ef]"}`}
-                      style={{ width: `${ach.is_earned ? 100 : pct}%` }}
+                      className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="mt-1 font-pixel text-[10px] text-[#9aa7b5]">
-                    {Math.min(current, ach.trigger_value).toLocaleString("ru-RU")} /{" "}
-                    {ach.trigger_value.toLocaleString("ru-RU")}
-                  </p>
-                </div>
-                <div className="mt-1.5 font-pixel text-[10px] text-[#9aa7b5]">
-                  Награда:
-                  {ach.reward_coins > 0 ? ` +${ach.reward_coins.toLocaleString("ru-RU")} монет` : ""}
-                  {ach.reward_crystals > 0 ? ` +${ach.reward_crystals} крист.` : ""}
-                </div>
+                )}
               </div>
             );
           })
