@@ -150,12 +150,17 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     }
   };
 
-  const getUpgradeIcon = (type: string): string => {
-    switch (type) {
-      case "click_multiplier": return "👆";
-      case "income_multiplier": return "⚡";
-      case "offline_extension": return "🌙";
-      default: return "✨";
+  const getUpgradeIcon = (upgrade: UpgradeRow): string => {
+    if (upgrade.icon_name?.trim()) return upgrade.icon_name.trim();
+    switch (upgrade.upgrade_type) {
+      case "click_multiplier":
+        return "👆";
+      case "income_multiplier":
+        return "⚡";
+      case "offline_extension":
+        return "😴";
+      default:
+        return "✨";
     }
   };
 

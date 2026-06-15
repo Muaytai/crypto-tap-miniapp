@@ -118,7 +118,10 @@ export type PlayerState = {
     item_id: number;
     item_name: string;
     quantity: number;
+    level?: number;
+    item_icon?: string;
     item_base_income: number;
+    item_base_price?: number;
   }>;
   upgrades: Array<{
     upgrade_id: number;
