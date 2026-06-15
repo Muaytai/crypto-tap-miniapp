@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { loadGameSettings, patchGameSettings, type GameSettings } from "@/lib/gameSettings";
+import { playGameSound } from "@/lib/gameSounds";
 
 type Props = {
   open: boolean;
@@ -50,6 +51,9 @@ export function SettingsModal({ open, onClose }: Props) {
   const update = (partial: Partial<GameSettings>) => {
     const newSettings = patchGameSettings(partial);
     setSettings(newSettings);
+    if (partial.sound === true) {
+      playGameSound("click", true);
+    }
   };
 
   if (!open) return null;

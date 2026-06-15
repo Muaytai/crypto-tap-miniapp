@@ -188,6 +188,7 @@ export async function buyUpgrade(
   coins_left: number;
   max_offline_minutes?: number;
   cached_income_per_second?: number;
+  error?: string;
 }> {
   return apiFetch("/api/upgrades/buy/", {
     method: "POST",

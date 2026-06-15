@@ -8,6 +8,7 @@ import {
   type DailyRewardDaySlot,
   type DailyRewardStatus,
 } from "@/lib/api";
+import { playGameSound } from "@/lib/gameSounds";
 
 type Props = {
   initData: string;
@@ -48,9 +49,11 @@ export function DailyReward({ initData, onUpdate }: Props) {
       setStatus(data);
       if (data.reward_coins > 0 || data.reward_crystals > 0) {
         onUpdate(data.reward_coins, data.reward_crystals);
+        playGameSound("success");
       }
     } catch (err) {
       console.error("Failed to claim daily reward:", err);
+      playGameSound("error");
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import {
   type DailyRewardDaySlot,
   type DailyRewardStatus,
 } from "@/lib/api";
+import { playGameSound } from "@/lib/gameSounds";
 
 function normalizeDailyError(error: unknown): string {
   if (!(error instanceof Error)) return "Не удалось загрузить награду";
@@ -100,8 +101,10 @@ export function DailyRewardModal({
       setStatus(data);
       onStatusChange?.(data.can_claim);
       onClaimed(data.reward_coins, data.reward_crystals);
+      playGameSound("success");
     } catch (e) {
       setError(normalizeDailyError(e));
+      playGameSound("error");
       await load();
     } finally {
       setLoading(false);

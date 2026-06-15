@@ -132,6 +132,8 @@ class Player(models.Model):
             # Очищаем доступные улучшения (не небесные)
             PlayerUpgrade.objects.filter(player=self, upgrade__is_celestial=False).delete()
 
+            self.max_offline_minutes = 180
+
             # Обновляем время последнего визита
             self.last_seen_at = timezone.now()
             self.last_sync_at = timezone.now()
@@ -281,6 +283,12 @@ class Upgrade(models.Model):
     class Meta:
         ordering = ["sort_order", "id"]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.icon_name.strip():
+            self.icon_name = f"upgrade_{self.pk}"
+            super().save(update_fields=["icon_name"])
+
     def __str__(self):
         return self.name
 
@@ -377,6 +385,12 @@ class Achievement(models.Model):
 
     class Meta:
         ordering = ["trigger_type", "trigger_value"]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.icon_name.strip():
+            self.icon_name = f"achievement_{self.pk}"
+            super().save(update_fields=["icon_name"])
 
     def __str__(self):
         return f"{self.name} ({self.trigger_type}: {self.trigger_value})"

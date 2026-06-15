@@ -1,6 +1,7 @@
 "use client";
 
 import { PlayerState } from "@/lib/api";
+import { playTapFeedback } from "@/lib/gameSounds";
 
 type Props = {
   playerState: PlayerState;
@@ -37,7 +38,10 @@ export function RoomScene({ playerState, onTap, clickMultiplier, isAnimating }: 
        {/* КНОПКА ТАПА (z-10) */}
       <div className="absolute left-1/2 bottom-6 -translate-x-1/2 z-10">
         <button
-          onClick={onTap}
+          onClick={() => {
+            playTapFeedback();
+            onTap();
+          }}
           className={`tap-target relative flex h-32 w-32 items-center justify-center transition-transform active:scale-95 ${
             isAnimating ? "scale-105" : ""
           }`}

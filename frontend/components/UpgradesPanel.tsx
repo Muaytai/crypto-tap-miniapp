@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { buyUpgrade, type PlayerState } from "@/lib/api";
+import { upgradeImageUrl } from "@/lib/upgradeIcons";
+import {
+  applyDevUpgradePurchase,
+  getUnlockProgress,
+  getUpgradeEffectBadge,
+  sortUpgrades,
+  type UpgradeRow,
+} from "@/lib/upgradeEffects";
+import { playGameSound } from "@/lib/gameSounds";
 
 type Props = {
   initData: string;
@@ -9,7 +18,6 @@ type Props = {
   onPurchase: (newState: PlayerState) => void;
 };
 
-// Форматирование больших чисел
 const formatPrice = (num: number): string => {
   if (num < 1000) return num.toLocaleString("ru-RU");
 
@@ -33,81 +41,91 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recentPurchase, setRecentPurchase] = useState<number | null>(null);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
   const isDev = initData === "dev" || initData === "test_init_data";
-  const purchasedUpgradeIds = new Set(playerState.upgrades.map((u) => u.upgrade_id));
+  const purchasedUpgradeIds = useMemo(
+    () => new Set(playerState.upgrades.map((u) => u.upgrade_id)),
+    [playerState.upgrades],
+  );
+
+  const sortedUpgrades = useMemo(
+    () => sortUpgrades(playerState.available_upgrades, purchasedUpgradeIds),
+    [playerState.available_upgrades, purchasedUpgradeIds],
+  );
 
   const handleBuy = async (upgradeId: number) => {
     setLoading(upgradeId);
     setError(null);
 
-    const upgrade = playerState.available_upgrades.find(u => u.id === upgradeId);
+    const upgrade = playerState.available_upgrades.find((u) => u.id === upgradeId);
     if (!upgrade) {
       setError("Улучшение не найдено");
+      playGameSound("error");
       setLoading(null);
       return;
     }
 
     if (purchasedUpgradeIds.has(upgradeId)) {
       setError("Уже куплено");
+      playGameSound("error");
+      setLoading(null);
+      return;
+    }
+
+    if (!isUnlocked(upgrade)) {
+      setError(getLockReason(upgrade));
+      playGameSound("error");
       setLoading(null);
       return;
     }
 
     if (playerState.player.coins < upgrade.base_price) {
       setError(`Не хватает монет! Нужно ${formatPrice(upgrade.base_price)}`);
+      playGameSound("error");
       setLoading(null);
       return;
     }
 
     if (isDev) {
       setTimeout(() => {
-        let next: PlayerState = {
-          ...playerState,
-          player: {
-            ...playerState.player,
-            coins: playerState.player.coins - upgrade.base_price,
-          },
-          upgrades: [
-            ...playerState.upgrades,
-            {
-              upgrade_id: upgradeId,
-              upgrade_name: upgrade.name,
-              upgrade_icon: upgrade.icon_name || ""
-            },
-          ],
-        };
-        onPurchase(updatedState);
+        onPurchase(applyDevUpgradePurchase(playerState, upgrade));
         setRecentPurchase(upgradeId);
+        playGameSound("success");
         setLoading(null);
       }, 300);
       return;
     }
 
-    // Реальный API-запрос
     try {
-      const catalogUpgrade = playerState.available_upgrades.find((u) => u.id === upgradeId);
       const result = await buyUpgrade(initData, upgradeId);
       if (result.success) {
         onPurchase({
           ...playerState,
-          player: { ...playerState.player, coins: result.coins_left },
+          player: {
+            ...playerState.player,
+            coins: result.coins_left,
+            max_offline_minutes: result.max_offline_minutes ?? playerState.player.max_offline_minutes,
+          },
+          income_per_second: result.cached_income_per_second ?? playerState.income_per_second,
           upgrades: [
             ...playerState.upgrades,
             {
               upgrade_id: upgradeId,
               upgrade_name: result.upgrade_name || upgrade.name,
-              upgrade_icon: ""
+              upgrade_icon: upgrade.icon_name || "",
             },
           ],
-        };
-        onPurchase(updatedState);
+        });
         setRecentPurchase(upgradeId);
+        playGameSound("success");
       } else {
         setError(result.error || "Ошибка покупки");
+        playGameSound("error");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка покупки");
+      playGameSound("error");
     } finally {
       setLoading(null);
     }
@@ -120,7 +138,7 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     }
   }, [recentPurchase]);
 
-  const isUnlocked = (upgrade: PlayerState["available_upgrades"][0]): boolean => {
+  const isUnlocked = (upgrade: UpgradeRow): boolean => {
     if (upgrade.min_total_taps > 0 && playerState.player.total_taps < upgrade.min_total_taps) {
       return false;
     }
@@ -140,11 +158,11 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
     }
     switch (upgrade.upgrade_type) {
       case "click_multiplier":
-        return `Тап ×${upgrade.value}`;
+        return `Каждый тап приносит в ${upgrade.value} раза больше осколков`;
       case "income_multiplier":
-        return `Доход ×${upgrade.value}`;
+        return `Пассивный доход увеличивается в ${upgrade.value} раза`;
       case "offline_extension":
-        return `Оффлайн +${upgrade.value} мин`;
+        return `Оффлайн-накопление ещё на ${upgrade.value} мин`;
       default:
         return upgrade.name;
     }
@@ -186,11 +204,15 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
       )}
 
       <div className="mt-6 flex flex-col gap-4">
-        {playerState.available_upgrades.map((upgrade) => {
+        {sortedUpgrades.map((upgrade) => {
           const isPurchased = purchasedUpgradeIds.has(upgrade.id);
           const unlocked = isUnlocked(upgrade);
           const canBuy = !isPurchased && unlocked && playerState.player.coins >= upgrade.base_price;
           const isRecent = recentPurchase === upgrade.id;
+          const imageUrl = upgradeImageUrl(upgrade);
+          const hasImgError = imgErrors[upgrade.id];
+          const effect = getUpgradeEffectBadge(upgrade);
+          const unlockProgress = getUnlockProgress(upgrade, playerState.player.total_taps);
 
           return (
             <div
@@ -214,20 +236,57 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
               )}
 
               <div className="flex gap-5">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-zinc-900/80 text-4xl">
-                  {getUpgradeIcon(upgrade.upgrade_type)}
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-violet-500/20 bg-zinc-900/80 p-1.5">
+                  {!hasImgError ? (
+                    <img
+                      src={imageUrl}
+                      alt={upgrade.name}
+                      className={[
+                        "h-full w-full object-contain transition-all",
+                        isPurchased
+                          ? "drop-shadow-[0_0_10px_rgba(34,197,94,0.35)]"
+                          : unlocked
+                            ? "opacity-95"
+                            : "opacity-60 grayscale-[0.4]",
+                      ].join(" ")}
+                      onError={() => setImgErrors((prev) => ({ ...prev, [upgrade.id]: true }))}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl">
+                      {getUpgradeIcon(upgrade)}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-1 flex-col justify-between min-w-0">
                   <div>
-                    <h3 className="font-pixel text-xl font-bold text-white tracking-wide">{upgrade.name}</h3>
-                    <p className="mt-1 text-violet-300 font-mono text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-pixel text-xl font-bold text-white tracking-wide">{upgrade.name}</h3>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide ${effect.className}`}
+                      >
+                        {effect.label}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-violet-300/90 font-mono text-sm leading-snug">
                       {getUpgradeDescription(upgrade)}
                     </p>
-                    {!unlocked && (
-                      <p className="mt-1 text-xs text-rose-400 font-mono">
-                        {getLockReason(upgrade)}
-                      </p>
+                    {unlockProgress && (
+                      <div className="mt-2">
+                        <div className="flex justify-between font-mono text-[10px] text-rose-400/90">
+                          <span>Тапы для разблокировки</span>
+                          <span>
+                            {unlockProgress.current.toLocaleString("ru-RU")} /{" "}
+                            {unlockProgress.target.toLocaleString("ru-RU")}
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-zinc-900">
+                          <div
+                            className="h-full bg-gradient-to-r from-rose-500 to-violet-500 transition-all"
+                            style={{ width: `${unlockProgress.pct}%` }}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -248,14 +307,14 @@ export function UpgradesPanel({ initData, playerState, onPurchase }: Props) {
                     ) : (
                       <button
                         onClick={() => handleBuy(upgrade.id)}
-                        disabled={loading === upgrade.id || !canBuy}
+                        disabled={loading === upgrade.id}
                         className={`tap-target w-full py-3.5 rounded-2xl font-pixel text-sm font-bold transition-all duration-200 shadow-lg ${
                           canBuy
                             ? "bg-gradient-to-b from-violet-500 to-violet-700 text-white hover:brightness-110 active:scale-[0.97] shadow-violet-500/50"
-                            : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                            : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700/80"
                         }`}
                       >
-                        {loading === upgrade.id ? "..." : "КУПИТЬ"}
+                        {loading === upgrade.id ? "..." : canBuy ? "КУПИТЬ" : "НЕДОСТУПНО"}
                       </button>
                     )}
                   </div>

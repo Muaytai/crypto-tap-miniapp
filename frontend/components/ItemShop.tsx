@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { buyItem, type PlayerState } from "@/lib/api";
+import { playGameSound } from "@/lib/gameSounds";
+import {
+  computeItemLevelFromQuantity,
+  getItemIncomeRate,
+  withRecalculatedIncome,
+} from "@/lib/income";
 
 type Props = {
   initData: string;
@@ -76,6 +82,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       const item = playerState.available_items.find(i => i.id === itemId);
       if (!item) {
         setError("Предмет не найден");
+        playGameSound("error");
         setLoading(null);
         return;
       }
@@ -89,6 +96,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
       if (playerState.player.coins < price) {
         setError(`Не хватает монет! Нужно ${formatPrice(price)}`);
+        playGameSound("error");
         setLoading(null);
         return;
       }
@@ -135,16 +143,16 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           });
         }
 
-        const updatedState = {
+        const updatedState = withRecalculatedIncome({
           ...playerState,
           player: { ...playerState.player, coins: playerState.player.coins - price },
           items: updatedItems,
           available_items: updatedAvailableItems,
-          income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
-        };
+        });
 
         onPurchase(updatedState);
         setRecentPurchase(itemId);
+        playGameSound("success");
         setLoading(null);
       }, 300);
       return;
@@ -154,36 +162,44 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     try {
       const result = await buyItem(initData, itemId, quantity);
       if (result.success) {
-        const updatedState = {
-          ...playerState,
-          player: { ...playerState.player, coins: result.coins_left },
-          items: playerState.items.map(item =>
-            item.item_id === itemId
-              ? { ...item, quantity: result.new_quantity, level: result.new_level ?? item.level }
-              : item
-          ),
-          income_per_second: result.cached_income_per_second,
-        };
+        const newQty = result.new_quantity;
+        const newLevel = computeItemLevelFromQuantity(newQty);
+        const updatedItems = playerState.items.map((item) =>
+          item.item_id === itemId
+            ? { ...item, quantity: newQty, level: newLevel }
+            : item,
+        );
 
-        if (!playerState.items.some(i => i.item_id === itemId)) {
-          const newItem = {
+        if (!playerState.items.some((i) => i.item_id === itemId)) {
+          const catalog = playerState.available_items.find((i) => i.id === itemId);
+          updatedItems.push({
             item_id: itemId,
             item_name: result.item_name,
-            item_icon: playerState.available_items.find(i => i.id === itemId)?.icon_name || "",
-            quantity: result.new_quantity,
-            level: result.new_level ?? 1,
-            item_base_income: playerState.available_items.find(i => i.id === itemId)?.base_income_per_second || 0,
-            item_base_price: playerState.available_items.find(i => i.id === itemId)?.base_price || 0,
-          };
-          updatedState.items.push(newItem);
+            item_icon: catalog?.icon_name || "",
+            quantity: newQty,
+            level: newLevel,
+            item_base_income: catalog?.base_income_per_second || 0,
+            item_base_price: catalog?.base_price || 0,
+          });
         }
-        onPurchase(updatedState);
+
+        onPurchase(
+          withRecalculatedIncome({
+            ...playerState,
+            player: { ...playerState.player, coins: result.coins_left },
+            items: updatedItems,
+            income_per_second: result.cached_income_per_second,
+          }),
+        );
         setRecentPurchase(itemId);
+        playGameSound("success");
       } else {
         setError(result.error || "Ошибка покупки");
+        playGameSound("error");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка покупки");
+      playGameSound("error");
     } finally {
       setLoading(null);
     }
@@ -325,7 +341,16 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                   <div>
                     <h3 className="font-pixel text-xl font-bold text-white tracking-wide">{item.name}</h3>
                     <p className="text-emerald-400 font-mono text-sm mt-0.5">
-                      +{item.base_income_per_second.toLocaleString("ru-RU")}/сек
+                      {currentQty > 0 ? (
+                        <>
+                          +{getItemIncomeRate(item, currentQty).toLocaleString("ru-RU")}/сек
+                          <span className="ml-1 text-xs text-emerald-600/80">
+                            (+{item.base_income_per_second}/шт)
+                          </span>
+                        </>
+                      ) : (
+                        <>+{item.base_income_per_second.toLocaleString("ru-RU")}/сек</>
+                      )}
                     </p>
                   </div>
 

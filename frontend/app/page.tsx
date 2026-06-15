@@ -5,7 +5,7 @@
  * По умолчанию — главная страница с тапалкой (activeTab === null).
  * Повторное нажатие на активную кнопку закрывает меню.
  */
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
 import { RoomScene } from "@/components/RoomScene";
@@ -20,6 +20,8 @@ import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { fetchDailyRewardStatus, fetchFullState, syncTaps, type PlayerState } from "@/lib/api";
+import { computeClickMultiplier } from "@/lib/upgradeEffects";
+import { withRecalculatedIncome } from "@/lib/income";
 import { NEW_UPGRADES_FOR_DEV } from "@/lib/upgradesCatalog";
 import { watchTelegramInitData } from "@/lib/telegram";
 
@@ -176,9 +178,12 @@ export default function Home() {
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
   // Тапы
-  const [clickMultiplier, setClickMultiplier] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const pendingTapsRef = useRef(0);
+  const clickMultiplier = useMemo(
+    () => (playerState ? computeClickMultiplier(playerState) : 1),
+    [playerState?.upgrades, playerState?.available_upgrades],
+  );
 
   useEffect(() => {
     return watchTelegramInitData((raw) => {
@@ -202,18 +207,6 @@ export default function Home() {
     };
     void loadState();
   }, [initData]);
-
-  // Обновляем множитель кликов из улучшений
-  useEffect(() => {
-    if (!playerState) return;
-    if (!initData || initData === "dev") {
-      const purchasedClickUpgrade = playerState.available_upgrades.find(
-        u => u.upgrade_type === "click_multiplier" &&
-        playerState.upgrades.some(pu => pu.upgrade_id === u.id)
-      );
-      setClickMultiplier(purchasedClickUpgrade?.value || 1);
-    }
-  }, [playerState, initData]);
 
   // Глобальный таймер для пассивного дохода
   useEffect(() => {
@@ -295,7 +288,9 @@ export default function Home() {
       });
     }
 
-    setPlayerState({ ...playerState, items: updatedItems });
+    setPlayerState(
+      withRecalculatedIncome({ ...playerState, items: updatedItems }),
+    );
   };
 
   const handleTap = useCallback(() => {
@@ -532,9 +527,12 @@ function DevHome() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [dailyClaimable, setDailyClaimable] = useState(false);
 
-  const [clickMultiplier, setClickMultiplier] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const pendingTapsRef = useRef(0);
+  const clickMultiplier = useMemo(
+    () => computeClickMultiplier(playerState),
+    [playerState.upgrades, playerState.available_upgrades],
+  );
 
   useEffect(() => {
     if (playerState.income_per_second === 0) return;
@@ -557,14 +555,6 @@ function DevHome() {
       .then((s) => setDailyClaimable(s.can_claim))
       .catch(() => setDailyClaimable(false));
   }, [activeTab]);
-
-  useEffect(() => {
-    const purchasedClickUpgrade = playerState.available_upgrades.find(
-      u => u.upgrade_type === "click_multiplier" &&
-      playerState.upgrades.some(pu => pu.upgrade_id === u.id)
-    );
-    setClickMultiplier(purchasedClickUpgrade?.value || 1);
-  }, [playerState]);
 
   const handleTabChangeDev = (tabId: DockTab) => {
     if (activeTab === tabId) {
@@ -637,7 +627,9 @@ function DevHome() {
       });
     }
 
-    setPlayerState({ ...playerState, items: updatedItems });
+    setPlayerState(
+      withRecalculatedIncome({ ...playerState, items: updatedItems }),
+    );
   };
 
   const handleTapDev = useCallback(() => {

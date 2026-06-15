@@ -440,13 +440,12 @@ class Command(BaseCommand):
             trigger_value,
             reward_crystals,
             reward_coins,
-            icon_name,
+            _icon_name,
         ) in enumerate(ACHIEVEMENTS, start=1):
             qs = Achievement.objects.filter(sort_order=idx).order_by("id")
             defaults = {
                 "name": name,
                 "description": description,
-                "icon_name": icon_name,
                 "trigger_type": trigger_type,
                 "trigger_value": trigger_value,
                 "reward_crystals": reward_crystals,
