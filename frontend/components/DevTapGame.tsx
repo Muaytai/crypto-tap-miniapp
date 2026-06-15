@@ -8,6 +8,7 @@ import { DailyReward } from "@/components/DailyReward";
 import { AchievementsList } from "@/components/AchievementsList";
 import { CelestialPanel } from "@/components/CelestialPanel";
 import { useState } from "react";
+import { NEW_UPGRADES_FOR_DEV } from "@/lib/upgradesCatalog";
 
 type DockTab = "game" | "shop" | "upgrades" | "prestige" | "celestial" | "profile" | "top";
 

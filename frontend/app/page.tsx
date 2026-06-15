@@ -20,6 +20,7 @@ import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { fetchDailyRewardStatus, fetchFullState, syncTaps, type PlayerState } from "@/lib/api";
+import { NEW_UPGRADES_FOR_DEV } from "@/lib/upgradesCatalog";
 import { watchTelegramInitData } from "@/lib/telegram";
 
 type DockTab = "lab" | "upgrades" | "goals" | "prestige" | "top";
