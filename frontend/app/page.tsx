@@ -20,6 +20,7 @@ import { CryptoTipBanner } from "@/components/CryptoTipBanner";
 import { MobileAppFrame } from "@/components/MobileAppFrame";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { fetchDailyRewardStatus, fetchFullState, syncTaps, type PlayerState } from "@/lib/api";
+import { NEW_UPGRADES_FOR_DEV } from "@/lib/upgradesCatalog";
 import { watchTelegramInitData } from "@/lib/telegram";
 
 type DockTab = "lab" | "upgrades" | "goals" | "prestige" | "top";
@@ -518,6 +519,7 @@ function DevHome() {
       { id: 8, name: "Удлинённая смена", description: "Оффлайн-накопление ещё на 1 час (поверх базового лимита).", upgrade_type: "offline_extension", value: 60, base_price: 5000, min_total_taps: 0, icon_name: "" },
       { id: 9, name: "Ночная ферма", description: "Риг копит осколки дольше, пока вы offline.", upgrade_type: "offline_extension", value: 120, base_price: 50000, min_total_taps: 2500, icon_name: "" },
       { id: 10, name: "12-часовой буфер", description: "До 12 часов пассивного дохода без входа в игру.", upgrade_type: "offline_extension", value: 360, base_price: 500000, min_total_taps: 25000, icon_name: "" },
+      ...NEW_UPGRADES_FOR_DEV,
     ],
     income_per_second: 10,
   });
