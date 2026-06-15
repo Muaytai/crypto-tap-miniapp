@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { buyItem, type PlayerState } from "@/lib/api";
 
 type Props = {
@@ -9,14 +9,35 @@ type Props = {
   onPurchase: (newState: PlayerState) => void;
 };
 
-// Только эти компоненты показываем в магазине
-const COMPONENT_IDS = [1, 2, 3, 4]; // Диван, Стол, Ноутбук, Стул
+const COMPONENT_IDS = [1, 2, 3, 4];
+
+// Форматирование больших чисел (K, M, B, T и т.д.)
+const formatPrice = (num: number): string => {
+  if (num < 1000) return num.toLocaleString("ru-RU");
+
+  const units = ["", "K", "M", "B", "T", "Qa", "Qi"];
+  let value = num;
+  let unitIndex = 0;
+
+  while (value >= 1000 && unitIndex < units.length - 1) {
+    value /= 1000;
+    unitIndex++;
+  }
+
+  // Округляем до 2-3 значащих цифр
+  const formatted = value >= 100
+    ? Math.floor(value).toString()
+    : value.toFixed(1).replace(/\.0$/, "");
+
+  return `${formatted}${units[unitIndex]}`;
+};
 
 export function ItemShop({ initData, playerState, onPurchase }: Props) {
   const [loading, setLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedMultiplier, setSelectedMultiplier] = useState<1 | 10 | 50>(1);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
+  const [recentPurchase, setRecentPurchase] = useState<number | null>(null);
   const isDev = initData === "dev" || initData === "test_init_data";
 
   // Фильтруем только нужные компоненты
@@ -34,17 +55,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
     return price;
   };
 
-  const getTotalUpgradesForLevel = (level: number): number => {
-    return level * 10;
-  };
-
-  const getProgress = (currentLevel: number, totalUpgrades: number): number => {
-    const neededForNext = currentLevel * 10;
-    const alreadySpent = getTotalUpgradesForLevel(currentLevel - 1);
-    const currentInThisLevel = Math.max(0, totalUpgrades - alreadySpent);
-    const progress = (currentInThisLevel / neededForNext) * 100;
-    return Math.min(100, Math.max(0, progress));
-  };
+  const getTotalUpgradesForLevel = (level: number): number => level * 10;
 
   const getProgressColor = (progress: number): string => {
     if (progress < 40) return "bg-red-500";
@@ -57,6 +68,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
   };
 
   const handleBuy = async (itemId: number, quantity: number) => {
+    // ... (handleBuy остаётся без изменений)
     setLoading(itemId);
     setError(null);
 
@@ -76,7 +88,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       const price = calculatePrice(item, currentQty, quantity);
 
       if (playerState.player.coins < price) {
-        setError(`Не хватает монет! Нужно ${price.toLocaleString("ru-RU")}`);
+        setError(`Не хватает монет! Нужно ${formatPrice(price)}`);
         setLoading(null);
         return;
       }
@@ -93,9 +105,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           const canTake = Math.min(remainingUpgrades, neededForNext - currentInThisLevel);
           newQty += canTake;
           remainingUpgrades -= canTake;
-          if (newQty >= alreadySpent + neededForNext) {
-            newLevel++;
-          }
+          if (newQty >= alreadySpent + neededForNext) newLevel++;
         }
         newLevel = Math.min(newLevel, 10);
 
@@ -127,16 +137,14 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
         const updatedState = {
           ...playerState,
-          player: {
-            ...playerState.player,
-            coins: playerState.player.coins - price,
-          },
+          player: { ...playerState.player, coins: playerState.player.coins - price },
           items: updatedItems,
           available_items: updatedAvailableItems,
           income_per_second: playerState.income_per_second + (item.base_income_per_second * quantity),
         };
 
         onPurchase(updatedState);
+        setRecentPurchase(itemId);
         setLoading(null);
       }, 300);
       return;
@@ -148,10 +156,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       if (result.success) {
         const updatedState = {
           ...playerState,
-          player: {
-            ...playerState.player,
-            coins: result.coins_left,
-          },
+          player: { ...playerState.player, coins: result.coins_left },
           items: playerState.items.map(item =>
             item.item_id === itemId
               ? { ...item, quantity: result.new_quantity, level: result.new_level ?? item.level }
@@ -159,6 +164,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           ),
           income_per_second: result.cached_income_per_second,
         };
+
         if (!playerState.items.some(i => i.item_id === itemId)) {
           const newItem = {
             item_id: itemId,
@@ -172,6 +178,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
           updatedState.items.push(newItem);
         }
         onPurchase(updatedState);
+        setRecentPurchase(itemId);
       } else {
         setError(result.error || "Ошибка покупки");
       }
@@ -181,6 +188,13 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
       setLoading(null);
     }
   };
+
+  useEffect(() => {
+    if (recentPurchase) {
+      const timer = setTimeout(() => setRecentPurchase(null), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [recentPurchase]);
 
   const getPriceForDisplay = (item: PlayerState["available_items"][0], quantity: number): number => {
     const currentQty = playerState.items.find(i => i.item_id === item.id)?.quantity || 0;
@@ -269,12 +283,26 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
 
           const imageUrl = getStaticImage(item.name);
           const hasError = imgErrors[item.id];
+          const isPurchased = recentPurchase === item.id;
 
           return (
             <div
               key={item.id}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 p-5 transition-all duration-300 hover:border-cyan-400/40 hover:shadow-2xl hover:shadow-cyan-500/10 backdrop-blur-xl"
+              className={`group relative overflow-hidden rounded-3xl border p-5 transition-all duration-300 backdrop-blur-xl ${
+                isPurchased
+                  ? "border-emerald-400 shadow-2xl shadow-emerald-500/50 scale-[1.02]"
+                  : "border-white/10 bg-zinc-950/80 hover:border-cyan-400/40 hover:shadow-2xl hover:shadow-cyan-500/10"
+              }`}
             >
+              {isPurchased && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                  <div className="animate-floatUp text-3xl font-bold text-emerald-400 drop-shadow-[0_0_15px_#10b981] flex flex-col items-center">
+                    +{selectedMultiplier}
+                    <span className="text-sm mt-1 opacity-80">КУПЛЕНО</span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-5">
                 {/* Image */}
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-cyan-500/20 bg-zinc-900/80 p-2">
@@ -293,8 +321,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                   )}
                 </div>
 
-                {/* Content */}
-                <div className="flex flex-1 flex-col justify-between min-w-0">
+                <div className="flex flex-1 flex-col min-w-0">
                   <div>
                     <h3 className="font-pixel text-xl font-bold text-white tracking-wide">{item.name}</h3>
                     <p className="text-emerald-400 font-mono text-sm mt-0.5">
@@ -302,20 +329,20 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                     </p>
                   </div>
 
-                  <div className="flex items-end justify-between gap-3 mt-4">
+                  <div className="mt-4 flex flex-col gap-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-2xl text-cyan-400">₿</span>
-                      <span className="font-mono text-2xl font-semibold text-cyan-300 tabular-nums">
-                        {priceForSelected.toLocaleString("ru-RU")}
+                      <span className="text-3xl text-cyan-400">₿</span>
+                      <span className="font-mono text-[28px] leading-none font-semibold text-cyan-300 tabular-nums tracking-[-0.02em]">
+                        {formatPrice(priceForSelected)}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleBuy(item.id, selectedMultiplier)}
                       disabled={loading === item.id || !canAfford}
-                      className={`tap-target px-8 py-3 rounded-2xl font-pixel text-sm font-bold transition-all duration-200 shadow-lg ${
+                      className={`tap-target w-full py-3.5 rounded-2xl font-pixel text-sm font-bold transition-all duration-200 shadow-lg ${
                         canAfford
-                          ? "bg-gradient-to-b from-cyan-400 to-cyan-600 text-black hover:brightness-110 active:scale-95 shadow-cyan-500/50"
+                          ? "bg-gradient-to-b from-cyan-400 to-cyan-600 text-black hover:brightness-110 active:scale-[0.97] shadow-cyan-500/50"
                           : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                       }`}
                     >
@@ -333,7 +360,7 @@ export function ItemShop({ initData, playerState, onPurchase }: Props) {
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-zinc-900 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${progressColor} shadow-[0_0_8px]`}
+                    className={`h-full rounded-full transition-all duration-500 ${progressColor}`}
                     style={{ width: `${Math.min(100, progress)}%` }}
                   />
                 </div>
