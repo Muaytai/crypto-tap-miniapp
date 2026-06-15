@@ -70,8 +70,7 @@ function makeDevLeaderboard(metric: LeaderboardMetric, count = 60): {
     const rank = i + 1;
     const n = baseNames[i % baseNames.length];
     const telegram_id = 1000 + rank;
-    const username =
-      n.username || (rank % 3 === 0 ? `user${rank}` : "");
+    const username = n.username || (rank % 3 === 0 ? `user${rank}` : "");
     const first_name = n.first_name;
 
     // убывающий “псевдо‑реалистичный” скор без рандома, чтобы было детерминированно
@@ -151,152 +150,113 @@ export function LeaderboardPanel({ initData }: Props) {
     me && (metric === "earnings" ? me.total_earned_all_time : metric === "crystals" ? me.crystals : me.prestige_count);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col pb-2">
-      <div className="sticky top-0 z-20 shrink-0 bg-[#070b14]/92 px-3 pt-2 backdrop-blur-[8px]">
-        <p className="text-center font-pixel text-[10px] font-bold uppercase tracking-wider text-cyan-200/50">
-          Crypto Tap
-        </p>
+    <div className="flex h-full flex-col bg-[#0a0806] px-4 pb-6">
+      {/* Header */}
+      <div className="border-b border-cyan-500/10 pb-4 pt-5">
+        <h1 className="font-pixel text-center text-3xl font-bold tracking-[0.15em] text-cyan-400 drop-shadow-[0_0_15px_#22d3ee]">
+          ТОП ИГРОКОВ
+        </h1>
+        <p className="mt-1 text-center font-mono text-xs text-cyan-500/60">Соревнуйся • Поднимайся • Доминируй</p>
+      </div>
+
+      <div className="mt-5">
         <CryptoTipBanner
-          seed={metric.charCodeAt(0) * 17}
-          className="w-full rounded-2xl border-white/10 bg-gradient-to-b from-[#141b2a]/80 to-[#0b0f1a]/65 px-3 py-2 text-slate-100/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+          seed={777}
+          className="rounded-2xl border-white/10 bg-gradient-to-b from-[#0f1625] to-[#0a0f1c] p-3"
         />
       </div>
 
-      <div className="min-h-0 flex-1 px-3 pb-2">
-        <h1 className="mb-3 mt-1 text-center font-pixel text-xl text-cyan-50 sm:text-2xl">Рейтинг</h1>
-        <div className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-[#101626]/80 to-[#0b0f1a]/70 p-2 shadow-[0_18px_50px_-25px_rgba(0,0,0,0.85)]">
-          <div className="relative mb-3 flex shrink-0 rounded-[18px] bg-[rgba(10,16,32,0.75)] p-1 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
-            {TABS.map((t) => {
-              const on = metric === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setMetric(t.id)}
-                  className={`tap-target relative flex-1 rounded-[14px] px-2 py-2 text-center font-pixel text-[10px] transition sm:text-[11px] ${
-                    on
-                      ? "-mt-0.5 pb-3 text-white shadow-[0_10px_22px_-16px_rgba(56,189,248,0.7),inset_0_2px_0_rgba(255,255,255,0.12)] [background:linear-gradient(to_bottom,#0ea5e9,#075985)] after:absolute after:bottom-[-10px] after:left-[10px] after:right-[10px] after:h-[14px] after:rounded-b-full after:[background:linear-gradient(to_bottom,#075985,transparent)] after:[filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.35))]"
-                      : "text-cyan-200/45 hover:text-cyan-100/80"
-                  }`}
-                >
-                  {t.icon ? `${t.icon} ` : ""}
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
+      {/* Табы */}
+      <div className="mt-4 flex gap-1.5 rounded-2xl bg-black/60 p-1.5">
+        {TABS.map((t) => {
+          const isActive = metric === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setMetric(t.id)}
+              className={`tap-target flex-1 rounded-xl py-3 text-sm font-pixel transition-all ${
+                isActive
+                  ? "bg-cyan-500 text-black shadow-[0_0_20px_#22d3ee]"
+                  : "bg-zinc-900/80 text-cyan-400/70 hover:bg-zinc-800 hover:text-cyan-300"
+              }`}
+            >
+              {t.icon} {t.label}
+            </button>
+          );
+        })}
+      </div>
 
-          {meRank != null && totalPlayers > 0 && (
-            <div className="mb-3 shrink-0 rounded-2xl border border-sky-400/20 bg-gradient-to-b from-sky-700/55 to-sky-900/35 px-3 py-3 text-center font-pixel text-[11px] text-sky-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] sm:text-xs">
-              Ваше место:{" "}
-              <span className="font-bold text-cyan-300">#{meRank.toLocaleString("ru-RU")}</span> из{" "}
-              <span className="font-bold text-cyan-300">{totalPlayers.toLocaleString("ru-RU")}</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-3 shrink-0 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300">{error}</div>
-          )}
-
-          <div className="min-h-0 flex-1 overflow-hidden">
-            {loading ? (
-              <p className="py-12 text-center text-zinc-400">Загрузка...</p>
-            ) : (
-              <div className="min-h-0 flex-1">
-                <ul className="flex flex-col gap-2 pb-2">
-                  {visibleRows.map((row) => {
-                    const medal = medalForRank(row.rank);
-                    const isTop3 = row.rank <= 3;
-                    return (
-                      <li
-                        key={`${row.telegram_id}-${row.rank}`}
-                        className={`flex items-center gap-3 rounded-2xl px-2.5 py-2.5 sm:px-3 ${
-                          isTop3
-                            ? "bg-gradient-to-b from-cyan-500/10 via-[#1a1f2d]/70 to-[#101522]/70 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.22),0_10px_24px_-22px_rgba(251,191,36,0.55)]"
-                            : "bg-gradient-to-b from-[#1a1f2d]/70 to-[#101522]/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
-                        }`}
-                      >
-                        <div className="flex w-10 shrink-0 justify-center text-center">
-                          {medal ? (
-                            <span className="text-xl" aria-label={`Место ${row.rank}`}>
-                              {medal}
-                            </span>
-                          ) : (
-                            <span className="font-pixel text-[11px] text-zinc-400">#{row.rank}</span>
-                          )}
-                        </div>
-                        {row.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={row.photo_url}
-                            alt=""
-                            className="h-10 w-10 shrink-0 rounded-xl border border-white/10 object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/60 to-blue-600/60 text-xs font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)]">
-                            {initials(row)}
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium text-white">{displayName(row)}</p>
-                        </div>
-                        <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-cyan-300 sm:text-sm">
-                          {formatScore(metric, row.score)}
-                        </p>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <div className="sticky bottom-0 z-10 shrink-0 bg-gradient-to-b from-transparent via-[#0b0f1a]/70 to-[#0b0f1a]/90 pt-1">
-            {!loading && meRank != null && me && meScore != null && (
-              <div className="mb-2 mt-1 flex items-center gap-3 rounded-2xl bg-gradient-to-b from-sky-700/35 to-sky-900/25 px-2.5 py-2.5 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.22)] sm:px-3">
-                <div className="flex w-10 shrink-0 justify-center text-center">
-                  <span className="font-pixel text-[11px] text-sky-100">#{meRank.toLocaleString("ru-RU")}</span>
-                </div>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/65 to-cyan-500/65 text-xs font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]">
-                  {(me.first_name?.trim()?.[0] || me.username?.trim()?.[0] || "?").toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-white">{me.username ? `@${me.username}` : me.first_name}</p>
-                </div>
-                <p className="shrink-0 text-right font-pixel text-xs font-bold tabular-nums text-cyan-300 sm:text-sm">
-                  {formatScore(metric, meScore)}
-                </p>
-              </div>
-            )}
-
-            {!loading && rows.length > pageSize && (
-              <div className="mt-1 flex items-center justify-center gap-2 pb-1">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={pageClamped <= 0}
-                  className="tap-target rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
-                  aria-label="Предыдущая страница"
-                >
-                  ‹
-                </button>
-                <div className="rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-300">
-                  стр. <span className="font-semibold text-white">{pageClamped + 1}</span> из{" "}
-                  <span className="font-semibold text-white">{totalPages}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={pageClamped >= totalPages - 1}
-                  className="tap-target rounded-lg border border-white/10 bg-black/80 px-3 py-2 text-xs text-zinc-200 disabled:opacity-40"
-                  aria-label="Следующая страница"
-                >
-                  ›
-                </button>
-              </div>
-            )}
-          </div>
+      {error && (
+        <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/50 p-3 text-center text-sm text-red-200 backdrop-blur-md">
+          {error}
         </div>
+      )}
+
+      <div className="mt-6 flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <p className="font-mono text-cyan-400">Загрузка рейтинга...</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Твоё место */}
+            {meRank && me && meScore !== undefined && (
+              <div className="rounded-3xl border border-cyan-400/30 bg-gradient-to-r from-cyan-950/60 to-transparent p-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl font-bold text-cyan-400">#{meRank}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium text-white">
+                      {me.username ? `@${me.username}` : me.first_name}
+                    </p>
+                    <p className="text-sm text-cyan-400">Ты здесь</p>
+                  </div>
+                  <div className="text-right font-mono text-2xl font-bold text-cyan-300">
+                    {formatIdleNumber(meScore)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Список */}
+            <div className="space-y-2">
+              {rows.map((row) => {
+                const medal = medalForRank(row.rank);
+                const isTop3 = row.rank <= 3;
+
+                return (
+                  <div
+                    key={row.rank}
+                    className={`flex items-center gap-4 rounded-3xl border p-4 transition-all ${
+                      isTop3
+                        ? "border-amber-400/40 bg-gradient-to-r from-amber-950/60 to-transparent"
+                        : "border-white/10 bg-zinc-950/80 hover:border-cyan-500/30"
+                    }`}
+                  >
+                    <div className="w-10 text-center">
+                      {medal ? (
+                        <span className="text-3xl">{medal}</span>
+                      ) : (
+                        <span className="font-pixel text-lg text-zinc-400">#{row.rank}</span>
+                      )}
+                    </div>
+
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-600/30 to-blue-600/30 text-xl font-bold text-white">
+                      {initials(row)}
+                    </div>
+
+                    <div className="min-w-0 flex-1 truncate">
+                      <p className="font-medium text-white">{displayName(row)}</p>
+                    </div>
+
+                    <div className="text-right font-mono text-xl font-bold text-cyan-300">
+                      {formatIdleNumber(row.score)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
