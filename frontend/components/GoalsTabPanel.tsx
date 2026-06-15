@@ -11,22 +11,17 @@ type Props = {
   titleClassName?: string;
 };
 
-export function GoalsTabPanel({ initData, playerState, onReward, titleClassName }: Props) {
+export function GoalsTabPanel({ initData, playerState, onReward }: Props) {
   return (
-    <div className="relative flex w-full flex-col">
+    <div className="relative flex w-full flex-col overflow-hidden bg-[#0a0806]">
       <GoalsRoomBackground />
-      <div className="relative z-10 flex flex-col gap-3 px-3 pb-3 pt-3">
-        <header className="shrink-0 text-center">
-          <h1
-            className={
-              titleClassName ??
-              "font-pixel text-2xl text-[#f6cd2d] drop-shadow-[0_0_12px_rgba(246,205,45,0.35)]"
-            }
-          >
-            Цели
+      <div className="relative z-10 flex flex-col gap-3 px-4 pb-6 pt-4">
+        <header className="text-center">
+          <h1 className="font-pixel text-3xl font-bold tracking-[0.15em] text-cyan-400 drop-shadow-[0_0_15px_#22d3ee]">
+            ЦЕЛИ
           </h1>
-          <p className="mt-1 font-pixel text-[10px] leading-relaxed text-cyan-200/70">
-            Путь к 1 BTC — учись крипте шаг за шагом
+          <p className="mt-1 font-mono text-xs text-cyan-500/70">
+            Путь к большим достижениям
           </p>
         </header>
         <AchievementsList initData={initData} playerState={playerState} onReward={onReward} />

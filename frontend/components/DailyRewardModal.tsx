@@ -113,135 +113,62 @@ export function DailyRewardModal({
   const schedule = status ? resolveDailyDaySchedule(status) : [];
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="daily-reward-title"
-    >
-      <button
-        type="button"
-        className="absolute inset-0 cursor-default"
-        aria-label="Закрыть"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 p-4 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-8">
       <div
-        className="relative w-full max-w-[360px] rounded-2xl border-2 border-sky-400/45 bg-[#161d2e] p-4 text-white shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+        className="w-full max-w-[380px] rounded-3xl border border-cyan-400/30 bg-[#0a0f1c] p-6 shadow-2xl animate-modal-slide-down"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2
-          id="daily-reward-title"
-          className="text-center text-lg font-semibold leading-tight tracking-tight text-white"
-        >
-          Заходи каждый день
-        </h2>
+        <h2 className="text-center font-pixel text-2xl text-cyan-300">ЕЖЕДНЕВНАЯ НАГРАДА</h2>
 
         {status && (
-          <p className="mt-3 text-center text-sm text-slate-300">
-            Серия:{" "}
-            <span className="font-semibold text-cyan-300">
-              {status.streak_display}
-            </span>{" "}
-            {streakWord(status.streak_display)} подряд
+          <p className="mt-2 text-center text-sm text-cyan-400">
+            Серия: <span className="font-bold">{status.streak_display}</span> дней
           </p>
         )}
 
-        {error && (
-          <p className="mt-2 text-center font-pixel text-[11px] text-red-300">{error}</p>
-        )}
+        {error && <p className="mt-3 text-center text-red-400 text-sm">{error}</p>}
 
-        {!status && !error && (
-          <p className="mt-4 text-center text-sm text-slate-400">Загрузка…</p>
-        )}
+        <div className="mt-6 grid grid-cols-7 gap-2">
+          {schedule.map((row) => {
+            const isClaimable = row.status === "claimable" && status?.can_claim;
+            const isClaimed = row.status === "claimed";
 
-        {status && (
-          <>
-            <div className="mt-4 grid grid-cols-7 gap-1.5">
-              {schedule.map((row) => {
-                const isClaimable = row.status === "claimable" && status.can_claim;
-                const isClaimed = row.status === "claimed";
-                const cellClass = isClaimable
-                  ? "border-cyan-400/80 bg-cyan-400/20 text-cyan-50 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
-                  : isClaimed
-                    ? "border-white/10 bg-slate-700/50 text-slate-200"
-                    : "border-white/5 bg-[#252b3d] text-slate-500";
-
-                return (
-                  <div
-                    key={row.day}
-                    className={`flex min-h-[5.25rem] min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-2 ${cellClass}`}
-                  >
-                    <span className="text-sm font-bold tabular-nums leading-none">{row.day}</span>
-                    <span className="mt-1 line-clamp-2 text-center text-[10px] font-medium leading-snug opacity-95">
-                      {rewardCaption(row)}
-                    </span>
-                    {isClaimed && <span className="mt-1 text-[11px] leading-none text-emerald-300/90">✓</span>}
-                    {isClaimable && (
-                      <span className="mt-1 text-[9px] uppercase tracking-wide text-cyan-200/90">сегодня</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="mt-4 text-center text-xs text-slate-400">
-              {status.days_to_weekly_bonus > 0 ? (
-                <>
-                  До следующей награды:{" "}
-                  <span className="font-semibold text-slate-200">
-                    {status.days_to_weekly_bonus} {streakWord(status.days_to_weekly_bonus)}
-                  </span>
-                  {status.weekly_bonus_crystals > 0 && (
-                    <span className="text-sky-300">
-                      {" "}
-                      (+{status.weekly_bonus_crystals}{" "}
-                      <span aria-hidden>◆</span>)
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-sky-300/90">Сегодня — день бонуса недели!</span>
-              )}
-            </p>
-
-            {status.can_claim && (
-              <p className="mt-2 text-center text-[11px] text-cyan-200/90">
-                Сегодня: +
-                {status.reward_coins.toLocaleString("ru-RU")} токенов
-                {status.reward_crystals > 0 && (
-                  <>
-                    {" "}
-                    +{status.reward_crystals} ◆
-                  </>
-                )}
-              </p>
-            )}
-
-            {!status.can_claim && status.message && (
-              <p className="mt-2 text-center text-[11px] text-slate-500">{status.message}</p>
-            )}
-          </>
-        )}
-
-        <div className="mt-5 flex flex-col gap-2">
-          {status?.can_claim && (
-            <button
-              type="button"
-              onClick={() => void handleClaim()}
-              disabled={loading}
-              className="tap-target w-full rounded-xl bg-gradient-to-b from-sky-500 to-sky-600 py-3 text-center text-sm font-semibold text-neutral-950 shadow-[0_4px_0_#0369a1] active:translate-y-px disabled:opacity-50"
-            >
-              {loading ? "…" : "Забрать награду"}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="tap-target w-full rounded-xl border-2 border-white/25 bg-[#1e2638] py-2.5 text-center text-sm font-medium text-white"
-          >
-            Закрыть
-          </button>
+            return (
+              <div
+                key={row.day}
+                className={`flex aspect-square flex-col items-center justify-center rounded-2xl border p-1 text-center transition-all ${
+                  isClaimed
+                    ? "border-emerald-400 bg-emerald-950/40"
+                    : isClaimable
+                    ? "border-cyan-400 bg-cyan-500/10 shadow-[0_0_12px_#22d3ee]"
+                    : "border-white/10 bg-zinc-900/70"
+                }`}
+              >
+                <span className="text-lg font-bold">{row.day}</span>
+                <span className="text-[10px] text-cyan-300 mt-1">
+                  {row.reward_coins || row.reward_crystals ? `+${row.reward_coins || ""}${row.reward_crystals ? "◆" : ""}` : "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
+
+        {status?.can_claim && (
+          <button
+            onClick={handleClaim}
+            disabled={loading}
+            className="tap-target mt-6 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 py-4 text-lg font-bold text-white active:scale-95"
+          >
+            {loading ? "Получаем..." : "ЗАБРАТЬ НАГРАДУ"}
+          </button>
+        )}
+
+        <button
+          onClick={onClose}
+          className="tap-target mt-3 w-full rounded-2xl border border-white/20 py-3 text-sm font-medium"
+        >
+          Закрыть
+        </button>
       </div>
     </div>
   );
